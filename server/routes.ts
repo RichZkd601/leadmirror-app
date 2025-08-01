@@ -1,0 +1,222 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import Stripe from "stripe";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { analyzeConversation } from "./openai";
+import { insertAnalysisSchema } from "@shared/schema";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Analysis routes
+  app.post('/api/analyze', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { conversationText } = req.body;
+
+      if (!conversationText || conversationText.trim().length === 0) {
+        return res.status(400).json({ message: "Conversation text is required" });
+      }
+
+      // Get user to check analysis limits
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user has reached monthly limit (non-premium users)
+      if (!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3) {
+        return res.status(403).json({ 
+          message: "Monthly analysis limit reached. Upgrade to premium for unlimited analyses.",
+          limitReached: true
+        });
+      }
+
+      // Analyze conversation with OpenAI
+      const analysisResult = await analyzeConversation(conversationText);
+
+      // Save analysis to database
+      const analysis = await storage.createAnalysis({
+        userId,
+        inputText: conversationText,
+        interestLevel: analysisResult.interestLevel,
+        interestJustification: analysisResult.interestJustification,
+        objections: analysisResult.objections,
+        strategicAdvice: analysisResult.strategicAdvice,
+        followUpSubject: analysisResult.followUpSubject,
+        followUpMessage: analysisResult.followUpMessage,
+      });
+
+      // Increment analysis count
+      await storage.incrementAnalysisCount(userId);
+
+      res.json({
+        id: analysis.id,
+        ...analysisResult,
+        createdAt: analysis.createdAt,
+      });
+    } catch (error) {
+      console.error("Error analyzing conversation:", error);
+      res.status(500).json({ message: "Failed to analyze conversation" });
+    }
+  });
+
+  // Get user analyses history
+  app.get('/api/analyses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.isPremium) {
+        return res.status(403).json({ message: "Premium subscription required to access analysis history" });
+      }
+
+      const analyses = await storage.getUserAnalyses(userId, 20);
+      res.json(analyses);
+    } catch (error) {
+      console.error("Error fetching analyses:", error);
+      res.status(500).json({ message: "Failed to fetch analyses" });
+    }
+  });
+
+  // Get specific analysis
+  app.get('/api/analyses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+
+      const analysis = await storage.getAnalysis(id);
+      if (!analysis) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+
+      // Check if user owns this analysis
+      if (analysis.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching analysis:", error);
+      res.status(500).json({ message: "Failed to fetch analysis" });
+    }
+  });
+
+  // Stripe subscription routes
+  app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.stripeSubscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        return res.json({
+          subscriptionId: subscription.id,
+          clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        });
+      }
+
+      if (!user.email) {
+        return res.status(400).json({ message: 'No user email on file' });
+      }
+
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      });
+
+      // Create price for €12/month
+      const price = await stripe.prices.create({
+        unit_amount: 1200, // €12.00 in cents
+        currency: 'eur',
+        recurring: { interval: 'month' },
+        product_data: {
+          name: 'LeadMirror Premium',
+        },
+      });
+
+      const subscription = await stripe.subscriptions.create({
+        customer: customer.id,
+        items: [{ price: price.id }],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      await storage.updateUserStripeInfo(userId, customer.id, subscription.id);
+
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      res.status(400).json({ error: { message: error.message } });
+    }
+  });
+
+  // Stripe webhook for subscription status updates
+  app.post('/api/stripe-webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
+    } catch (err: any) {
+      console.log(`Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.created':
+        const subscription = event.data.object;
+        if (subscription.status === 'active') {
+          // Update user premium status
+          const user = await storage.getUserByStripeSubscriptionId(subscription.id);
+          if (user) {
+            await storage.updateUserPremiumStatus(user.id, true);
+          }
+        }
+        break;
+      case 'customer.subscription.deleted':
+        const deletedSubscription = event.data.object;
+        const userToUpdate = await storage.getUserByStripeSubscriptionId(deletedSubscription.id);
+        if (userToUpdate) {
+          await storage.updateUserPremiumStatus(userToUpdate.id, false);
+        }
+        break;
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({ received: true });
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
