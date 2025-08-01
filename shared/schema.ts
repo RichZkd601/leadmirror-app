@@ -39,17 +39,38 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Analysis storage table
+// Analysis storage table - Enhanced for world-class features
 export const analyses = pgTable("analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   inputText: text("input_text").notNull(),
+  
+  // Core analysis
   interestLevel: varchar("interest_level").notNull(), // "hot", "warm", "cold"
   interestJustification: text("interest_justification").notNull(),
-  objections: jsonb("objections").notNull(), // Array of objection objects
+  confidenceScore: integer("confidence_score").notNull(), // 0-100
+  
+  // Advanced psychological analysis
+  personalityProfile: jsonb("personality_profile").notNull(), // {type, traits, communicationStyle}
+  emotionalState: jsonb("emotional_state").notNull(), // {primary, intensity, indicators}
+  
+  // Enhanced objections analysis
+  objections: jsonb("objections").notNull(), // Array with responseStrategy and probability
+  buyingSignals: jsonb("buying_signals").notNull(), // Array of detected buying signals
+  
+  // Strategic recommendations
+  nextSteps: jsonb("next_steps").notNull(), // Array of prioritized actions
   strategicAdvice: text("strategic_advice").notNull(),
+  talkingPoints: jsonb("talking_points").notNull(), // Array of key points
+  
+  // Follow-up optimization
   followUpSubject: text("follow_up_subject").notNull(),
   followUpMessage: text("follow_up_message").notNull(),
+  alternativeApproaches: jsonb("alternative_approaches").notNull(), // Array of different strategies
+  
+  // Risk management
+  riskFactors: jsonb("risk_factors").notNull(), // Array of risks and mitigations
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { analyzeConversation } from "./openai";
+import { generateAdvancedInsights, analyzeEmotionalJourney } from "./advancedAnalytics";
 import { insertAnalysisSchema } from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -54,17 +55,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Analyze conversation with OpenAI
       const analysisResult = await analyzeConversation(conversationText);
+      
+      // Generate advanced insights
+      const advancedInsights = await generateAdvancedInsights(conversationText);
+      
+      // Analyze emotional journey
+      const emotionalAnalysis = await analyzeEmotionalJourney(conversationText);
 
-      // Save analysis to database
+      // Save enhanced analysis to database
       const analysis = await storage.createAnalysis({
         userId,
         inputText: conversationText,
         interestLevel: analysisResult.interestLevel,
         interestJustification: analysisResult.interestJustification,
+        confidenceScore: analysisResult.confidenceScore,
+        personalityProfile: analysisResult.personalityProfile,
+        emotionalState: analysisResult.emotionalState,
         objections: analysisResult.objections,
+        buyingSignals: analysisResult.buyingSignals,
+        nextSteps: analysisResult.nextSteps,
         strategicAdvice: analysisResult.strategicAdvice,
+        talkingPoints: analysisResult.talkingPoints,
         followUpSubject: analysisResult.followUpSubject,
         followUpMessage: analysisResult.followUpMessage,
+        alternativeApproaches: analysisResult.alternativeApproaches,
+        riskFactors: analysisResult.riskFactors,
       });
 
       // Increment analysis count
@@ -73,6 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         id: analysis.id,
         ...analysisResult,
+        advancedInsights,
+        emotionalAnalysis,
         createdAt: analysis.createdAt,
       });
     } catch (error) {

@@ -2,7 +2,15 @@
 
 ## Overview
 
-LeadMirror is a SaaS application that analyzes commercial conversations and generates effective follow-up messages using AI. The application allows users to input sales conversations (emails or call summaries), analyzes them using OpenAI's GPT-4o model, and provides insights including prospect interest levels, potential objections, strategic advice, and ready-to-use follow-up messages.
+LeadMirror is the world's most advanced SaaS application for analyzing commercial conversations using revolutionary AI technology. The application provides comprehensive sales conversation analysis with advanced psychological profiling, competitive intelligence, and predictive analytics. Built with cutting-edge AI capabilities including:
+
+- **Deep Psychological Analysis**: Personality profiling, emotional state detection, and behavioral pattern recognition
+- **Advanced Sales Intelligence**: Conversation quality scoring, sales timing optimization, and closing probability predictions
+- **Competitive Analysis**: Automatic competitor detection, threat assessment, and strategic counter-measures
+- **Predictive AI**: Objection prediction, next-step recommendations, and risk factor identification
+- **Emotional Journey Mapping**: Real-time sentiment analysis and emotional trigger detection
+
+The platform combines the expertise of top sales methodologies with advanced AI to provide unprecedented insights into sales conversations, making it the definitive tool for sales professionals, coaches, and commercial teams worldwide.
 
 ## User Preferences
 
@@ -41,14 +49,20 @@ Language: French language support implemented throughout the application interfa
 - **User Management**: Automatic user creation/update on login
 - **Authorization**: Route-level middleware protection for authenticated endpoints
 
-### AI Integration
-- **Provider**: OpenAI GPT-4o model for conversation analysis
-- **Processing**: Structured prompt engineering to extract:
-  - Interest level classification (hot/warm/cold)
-  - Potential objections with intensity levels
-  - Strategic follow-up advice
-  - Generated email subject and message content
-- **Response Handling**: JSON-structured responses for consistent data parsing
+### Revolutionary AI Integration
+- **Primary AI**: OpenAI GPT-4o model with advanced prompt engineering for world-class analysis
+- **Multi-Layer Analysis System**:
+  - **Core Analysis**: Interest level, objections, strategic advice, follow-up generation
+  - **Psychological Profiling**: DISC personality analysis, communication style detection, behavioral traits
+  - **Emotional Intelligence**: Sentiment tracking, emotional state detection, trigger identification
+  - **Predictive Analytics**: Closing probability, objection prediction, timing optimization
+  - **Competitive Intelligence**: Competitor detection, threat assessment, advantage identification
+  - **Advanced Insights**: Conversation quality scoring, prospect maturity assessment, key moment detection
+- **Triple-AI Architecture**: 
+  - Primary conversation analysis
+  - Advanced insights generation
+  - Emotional journey mapping
+- **Response Handling**: Multi-structured JSON responses with comprehensive validation
 
 ### Payment Processing
 - **Provider**: Stripe for subscription management

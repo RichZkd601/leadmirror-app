@@ -13,7 +13,25 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FlipHorizontal2, Sparkles, Copy, Clock, TrendingUp, History, Crown, Lightbulb, Target } from "lucide-react";
+import { 
+  FlipHorizontal2, 
+  Sparkles, 
+  Copy, 
+  Clock, 
+  TrendingUp, 
+  History, 
+  Crown, 
+  Lightbulb, 
+  Target, 
+  User as UserIcon, 
+  CheckCircle, 
+  AlertTriangle, 
+  Brain, 
+  Mail, 
+  Shuffle, 
+  Shield, 
+  ArrowRight 
+} from "lucide-react";
 
 interface Analysis {
   id: string;
@@ -21,14 +39,94 @@ interface Analysis {
   inputText: string;
   interestLevel: "hot" | "warm" | "cold";
   interestJustification: string;
+  confidenceScore?: number;
+  personalityProfile?: {
+    type: "analytical" | "driver" | "expressive" | "amiable";
+    traits: string[];
+    communicationStyle: string;
+  };
+  emotionalState?: {
+    primary: "excited" | "cautious" | "frustrated" | "neutral" | "enthusiastic";
+    intensity: number;
+    indicators: string[];
+  };
   objections: Array<{
     type: string;
     intensity: "high" | "medium" | "low";
     description: string;
+    responseStrategy?: string;
+    probability?: number;
+  }>;
+  buyingSignals?: Array<{
+    signal: string;
+    strength: "strong" | "medium" | "weak";
+    description: string;
+  }>;
+  nextSteps?: Array<{
+    action: string;
+    priority: "high" | "medium" | "low";
+    timeframe: string;
+    reasoning: string;
   }>;
   strategicAdvice: string;
+  talkingPoints?: string[];
   followUpSubject: string;
   followUpMessage: string;
+  alternativeApproaches?: Array<{
+    approach: string;
+    when: string;
+    message: string;
+  }>;
+  riskFactors?: Array<{
+    risk: string;
+    impact: "high" | "medium" | "low";
+    mitigation: string;
+  }>;
+  advancedInsights?: {
+    conversationQualityScore: number;
+    salesTiming: {
+      currentPhase: string;
+      nextPhaseRecommendation: string;
+      timeToClose: string;
+      urgencyIndicators: string[];
+    };
+    keyMoments: Array<{
+      moment: string;
+      significance: string;
+      action: string;
+    }>;
+    competitiveAnalysis: {
+      competitorsDetected: string[];
+      competitiveAdvantages: string[];
+      threatLevel: string;
+      counterStrategies: string[];
+    };
+    prospectMaturity: {
+      decisionMakingStage: string;
+      readinessScore: number;
+      missingElements: string[];
+    };
+    predictions: {
+      closingProbability: number;
+      bestApproachVector: string;
+      predictedObjections: Array<{
+        objection: string;
+        probability: number;
+        preventiveStrategy: string;
+      }>;
+    };
+  };
+  emotionalAnalysis?: {
+    emotionalTrajectory: Array<{
+      phase: string;
+      emotion: string;
+      intensity: number;
+      triggers: string[];
+    }>;
+    overallSentiment: number;
+    emotionalTriggers: string[];
+    recommendedEmotionalApproach: string;
+  };
   createdAt: string;
 }
 
@@ -182,6 +280,15 @@ export default function Dashboard() {
             
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => window.location.href = "/analytics"}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Target className="w-4 h-4 mr-1" />
+                  Analytics
+                </Button>
                 <span className="text-sm text-muted-foreground">
                   Analyses utilisées : <span className="font-medium">{user.monthlyAnalysesUsed || 0}</span>
                   {!user.isPremium && "/3"}
@@ -297,88 +404,567 @@ Sarah"
               </Card>
             )}
 
-            {/* Analysis Results */}
+            {/* Revolutionary Analysis Results */}
             {currentAnalysis && !analyzeMutation.isPending && (
               <div className="space-y-6">
-                {/* Interest Level */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Niveau d'intérêt</CardTitle>
-                      <Badge variant={getInterestColor(currentAnalysis.interestLevel)}>
-                        {currentAnalysis.interestLevel.charAt(0).toUpperCase() + currentAnalysis.interestLevel.slice(1)}
-                      </Badge>
+                {/* Quick Overview Bar */}
+                <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <Badge variant={getInterestColor(currentAnalysis.interestLevel)} className="text-sm px-3 py-1 mb-2">
+                          {currentAnalysis.interestLevel === 'hot' ? '🔥 CHAUD' : 
+                           currentAnalysis.interestLevel === 'warm' ? '🟡 TIÈDE' : 
+                           '🔵 FROID'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">Niveau d'intérêt</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{currentAnalysis.confidenceScore || 85}%</div>
+                        <p className="text-xs text-muted-foreground">Score de confiance</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold">{currentAnalysis.personalityProfile?.type || 'Analytique'}</div>
+                        <p className="text-xs text-muted-foreground">Profil psychologique</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold">{currentAnalysis.emotionalState?.primary || 'Neutre'}</div>
+                        <p className="text-xs text-muted-foreground">État émotionnel</p>
+                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">
-                      {currentAnalysis.interestJustification}
-                    </p>
                   </CardContent>
                 </Card>
 
-                {/* Objections */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {/* Enhanced Interest Level */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <TrendingUp className="w-5 h-5" />
+                        <span>Analyse d'intérêt</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Badge variant={getInterestColor(currentAnalysis.interestLevel)} className="text-sm px-3 py-1">
+                          {currentAnalysis.interestLevel === 'hot' ? '🔥 CHAUD' : 
+                           currentAnalysis.interestLevel === 'warm' ? '🟡 TIÈDE' : 
+                           '🔵 FROID'}
+                        </Badge>
+                        <span className="text-2xl font-bold text-green-600">{currentAnalysis.confidenceScore || 85}%</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {currentAnalysis.interestJustification}
+                      </p>
+                      {currentAnalysis.emotionalState && (
+                        <div className="p-3 bg-muted rounded">
+                          <p className="text-sm font-medium">État émotionnel détecté:</p>
+                          <p className="text-sm">{currentAnalysis.emotionalState.primary} (Intensité: {currentAnalysis.emotionalState.intensity}/10)</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Personality Profile */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <UserIcon className="w-5 h-5" />
+                        <span>Profil psychologique</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {currentAnalysis.personalityProfile ? (
+                        <>
+                          <div>
+                            <Badge variant="secondary" className="mb-2">{currentAnalysis.personalityProfile.type}</Badge>
+                            <p className="text-sm text-muted-foreground">{currentAnalysis.personalityProfile.communicationStyle}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium mb-2">Traits comportementaux:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {currentAnalysis.personalityProfile.traits?.map((trait: string, index: number) => (
+                                <Badge key={index} variant="outline" className="text-xs">{trait}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-3 bg-muted rounded">
+                          <p className="text-sm text-muted-foreground">Profil en cours d'analyse lors des prochaines interactions...</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Buying Signals */}
+                {currentAnalysis.buyingSignals && currentAnalysis.buyingSignals.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span>Signaux d'achat détectés</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {currentAnalysis.buyingSignals.map((signal: any, index: number) => (
+                          <div key={index} className="p-3 border rounded">
+                            <div className="flex items-center justify-between mb-2">
+                              <Badge variant={signal.strength === 'strong' ? 'default' : 
+                                            signal.strength === 'medium' ? 'secondary' : 'outline'}>
+                                {signal.strength}
+                              </Badge>
+                            </div>
+                            <p className="font-medium text-sm">{signal.signal}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{signal.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Enhanced Objections */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Objections probables</CardTitle>
+                    <CardTitle className="flex items-center space-x-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span>Objections probables & Stratégies</span>
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {currentAnalysis.objections.map((objection, index) => (
-                        <div key={index} className="flex items-start space-x-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${getObjectionColor(objection.intensity)}`} />
-                          <div>
-                            <p className="font-medium text-foreground">{objection.type}</p>
-                            <p className="text-sm text-muted-foreground">{objection.description}</p>
+                    <div className="space-y-4">
+                      {currentAnalysis.objections?.map((objection: any, index: number) => (
+                        <div key={index} className="border rounded p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={objection.intensity === 'high' ? 'destructive' : 
+                                            objection.intensity === 'medium' ? 'secondary' : 'outline'}>
+                                {objection.type}
+                              </Badge>
+                              {objection.probability && (
+                                <span className="text-sm text-muted-foreground">{objection.probability}% probabilité</span>
+                              )}
+                            </div>
+                            <Badge variant="outline">{objection.intensity}</Badge>
                           </div>
+                          <p className="text-sm mb-3">{objection.description}</p>
+                          {objection.responseStrategy && (
+                            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded">
+                              <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Stratégie de réponse:</p>
+                              <p className="text-sm text-blue-700 dark:text-blue-300">{objection.responseStrategy}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Strategic Advice */}
+                {/* Next Steps */}
+                {currentAnalysis.nextSteps && currentAnalysis.nextSteps.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Clock className="w-5 h-5" />
+                        <span>Étapes suivantes recommandées</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {currentAnalysis.nextSteps.map((step: any, index: number) => (
+                          <div key={index} className="flex items-start space-x-3 p-3 border rounded">
+                            <Badge variant={step.priority === 'high' ? 'destructive' : 
+                                          step.priority === 'medium' ? 'secondary' : 'outline'}>
+                              {step.priority}
+                            </Badge>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{step.action}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{step.timeframe}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{step.reasoning}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Enhanced Strategic Advice */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Conseils stratégiques</CardTitle>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Brain className="w-5 h-5" />
+                      <span>Conseils stratégiques avancés</span>
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-wrap">
-                      {currentAnalysis.strategicAdvice}
-                    </p>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm leading-relaxed">{currentAnalysis.strategicAdvice}</p>
+                    
+                    {currentAnalysis.talkingPoints && currentAnalysis.talkingPoints.length > 0 && (
+                      <div>
+                        <p className="font-medium text-sm mb-2">Points clés à aborder:</p>
+                        <ul className="space-y-1">
+                          {currentAnalysis.talkingPoints.map((point: string, index: number) => (
+                            <li key={index} className="text-sm text-muted-foreground flex items-start">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                              {point}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
-                {/* Generated Follow-up */}
+                {/* Enhanced Follow-up */}
                 <Card>
                   <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Message de relance généré</CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => copyToClipboard(`Subject: ${currentAnalysis.followUpSubject}\n\n${currentAnalysis.followUpMessage}`)}
-                      >
-                        <Copy className="w-4 h-4 mr-1" />
-                        Copier le message
-                      </Button>
-                    </div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Mail className="w-5 h-5" />
+                      <span>Message de relance optimisé</span>
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted rounded-lg p-4">
-                      <div className="mb-3">
-                        <p className="text-sm font-medium text-foreground">Objet :</p>
-                        <p className="text-sm text-muted-foreground">{currentAnalysis.followUpSubject}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground mb-2">Message :</p>
-                        <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                          {currentAnalysis.followUpMessage}
-                        </div>
-                      </div>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Objet :</label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded">{currentAnalysis.followUpSubject}</p>
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Message :</label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded whitespace-pre-wrap">{currentAnalysis.followUpMessage}</p>
+                    </div>
+                    <Button 
+                      onClick={() => copyToClipboard(`Objet: ${currentAnalysis.followUpSubject}\n\n${currentAnalysis.followUpMessage}`)}
+                      className="w-full"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copier le message complet
+                    </Button>
                   </CardContent>
                 </Card>
+
+                {/* Alternative Approaches */}
+                {currentAnalysis.alternativeApproaches && currentAnalysis.alternativeApproaches.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Shuffle className="w-5 h-5" />
+                        <span>Approches alternatives</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {currentAnalysis.alternativeApproaches.map((approach: any, index: number) => (
+                          <div key={index} className="border rounded p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-sm">{approach.approach}</h4>
+                              <Badge variant="outline" className="text-xs">{approach.when}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground bg-muted rounded p-3">{approach.message}</p>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="mt-2"
+                              onClick={() => copyToClipboard(approach.message)}
+                            >
+                              <Copy className="w-3 h-3 mr-1" />
+                              Copier
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Advanced Insights Section */}
+                {currentAnalysis.advancedInsights && (
+                  <>
+                    {/* Conversation Quality & Predictions */}
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <Card className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Target className="w-5 h-5" />
+                            <span>Score de qualité & Prédictions</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="text-center">
+                            <div className="text-4xl font-bold text-green-600 mb-2">
+                              {currentAnalysis.advancedInsights.conversationQualityScore}%
+                            </div>
+                            <p className="text-sm text-muted-foreground">Score de qualité conversation</p>
+                          </div>
+                          
+                          <div className="text-center p-3 bg-white dark:bg-black rounded">
+                            <div className="text-2xl font-bold text-blue-600 mb-1">
+                              {currentAnalysis.advancedInsights.predictions.closingProbability}%
+                            </div>
+                            <p className="text-sm text-muted-foreground">Probabilité de closing</p>
+                          </div>
+                          
+                          <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded">
+                            <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Meilleur vecteur d'approche:</p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              {currentAnalysis.advancedInsights.predictions.bestApproachVector}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Sales Timing */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Clock className="w-5 h-5" />
+                            <span>Timing commercial</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <Badge variant="secondary" className="mb-2">
+                              Phase: {currentAnalysis.advancedInsights.salesTiming.currentPhase}
+                            </Badge>
+                            <Badge variant="outline" className="ml-2">
+                              {currentAnalysis.advancedInsights.salesTiming.timeToClose}
+                            </Badge>
+                          </div>
+                          
+                          <div className="p-3 bg-muted rounded">
+                            <p className="text-sm font-medium mb-1">Prochaine étape recommandée:</p>
+                            <p className="text-sm">{currentAnalysis.advancedInsights.salesTiming.nextPhaseRecommendation}</p>
+                          </div>
+                          
+                          {currentAnalysis.advancedInsights.salesTiming.urgencyIndicators.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium mb-2">Indicateurs d'urgence:</p>
+                              <div className="space-y-1">
+                                {currentAnalysis.advancedInsights.salesTiming.urgencyIndicators.map((indicator, index) => (
+                                  <div key={index} className="flex items-center text-sm">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    {indicator}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Key Moments */}
+                    {currentAnalysis.advancedInsights.keyMoments.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Lightbulb className="w-5 h-5" />
+                            <span>Moments clés détectés</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {currentAnalysis.advancedInsights.keyMoments.map((moment, index) => (
+                              <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="font-medium text-sm">{moment.moment}</p>
+                                  <Badge variant={moment.significance === 'critique' ? 'destructive' : 
+                                               moment.significance === 'important' ? 'secondary' : 'outline'}>
+                                    {moment.significance}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{moment.action}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Competitive Analysis */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <Shield className="w-5 h-5" />
+                          <span>Analyse concurrentielle</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Niveau de menace:</span>
+                          <Badge variant={currentAnalysis.advancedInsights.competitiveAnalysis.threatLevel === 'high' ? 'destructive' : 
+                                        currentAnalysis.advancedInsights.competitiveAnalysis.threatLevel === 'medium' ? 'secondary' : 'outline'}>
+                            {currentAnalysis.advancedInsights.competitiveAnalysis.threatLevel}
+                          </Badge>
+                        </div>
+                        
+                        {currentAnalysis.advancedInsights.competitiveAnalysis.competitorsDetected.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Concurrents détectés:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {currentAnalysis.advancedInsights.competitiveAnalysis.competitorsDetected.map((competitor, index) => (
+                                <Badge key={index} variant="outline">{competitor}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {currentAnalysis.advancedInsights.competitiveAnalysis.competitiveAdvantages.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Vos avantages concurrentiels:</p>
+                            <ul className="space-y-1">
+                              {currentAnalysis.advancedInsights.competitiveAnalysis.competitiveAdvantages.map((advantage, index) => (
+                                <li key={index} className="text-sm flex items-start">
+                                  <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                                  {advantage}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Prospect Maturity */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2">
+                          <UserIcon className="w-5 h-5" />
+                          <span>Maturité du prospect</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Étape de décision:</span>
+                          <Badge variant="secondary">{currentAnalysis.advancedInsights.prospectMaturity.decisionMakingStage}</Badge>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Score de préparation:</span>
+                            <span className="font-medium">{currentAnalysis.advancedInsights.prospectMaturity.readinessScore}%</span>
+                          </div>
+                          <Progress value={currentAnalysis.advancedInsights.prospectMaturity.readinessScore} className="h-2" />
+                        </div>
+                        
+                        {currentAnalysis.advancedInsights.prospectMaturity.missingElements.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Éléments manquants:</p>
+                            <ul className="space-y-1">
+                              {currentAnalysis.advancedInsights.prospectMaturity.missingElements.map((element, index) => (
+                                <li key={index} className="text-sm text-muted-foreground flex items-start">
+                                  <span className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                                  {element}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Predicted Objections */}
+                    {currentAnalysis.advancedInsights.predictions.predictedObjections.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span>Objections prédites par l'IA</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {currentAnalysis.advancedInsights.predictions.predictedObjections.map((objection, index) => (
+                              <div key={index} className="border rounded p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="font-medium text-sm">{objection.objection}</p>
+                                  <Badge variant="outline">{objection.probability}% probabilité</Badge>
+                                </div>
+                                <div className="bg-purple-50 dark:bg-purple-950 p-3 rounded">
+                                  <p className="text-sm font-medium text-purple-800 dark:text-purple-200 mb-1">Stratégie préventive:</p>
+                                  <p className="text-sm text-purple-700 dark:text-purple-300">{objection.preventiveStrategy}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                )}
+
+                {/* Emotional Analysis */}
+                {currentAnalysis.emotionalAnalysis && (
+                  <Card className="bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-950 dark:to-purple-950">
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Brain className="w-5 h-5" />
+                        <span>Analyse émotionnelle avancée</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold mb-2" style={{
+                          color: currentAnalysis.emotionalAnalysis.overallSentiment > 50 ? '#10b981' : 
+                                currentAnalysis.emotionalAnalysis.overallSentiment > 0 ? '#f59e0b' : '#ef4444'
+                        }}>
+                          {currentAnalysis.emotionalAnalysis.overallSentiment > 0 ? '+' : ''}{currentAnalysis.emotionalAnalysis.overallSentiment}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Sentiment global (-100 à +100)</p>
+                      </div>
+                      
+                      <div className="p-3 bg-white dark:bg-black rounded">
+                        <p className="text-sm font-medium mb-1">Approche émotionnelle recommandée:</p>
+                        <p className="text-sm">{currentAnalysis.emotionalAnalysis.recommendedEmotionalApproach}</p>
+                      </div>
+                      
+                      {currentAnalysis.emotionalAnalysis.emotionalTriggers.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Déclencheurs émotionnels détectés:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {currentAnalysis.emotionalAnalysis.emotionalTriggers.map((trigger, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">{trigger}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Risk Factors */}
+                {currentAnalysis.riskFactors && currentAnalysis.riskFactors.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Shield className="w-5 h-5" />
+                        <span>Facteurs de risque & Mitigations</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {currentAnalysis.riskFactors.map((risk: any, index: number) => (
+                          <div key={index} className="border rounded p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="font-medium text-sm">{risk.risk}</p>
+                              <Badge variant={risk.impact === 'high' ? 'destructive' : 
+                                            risk.impact === 'medium' ? 'secondary' : 'outline'}>
+                                {risk.impact}
+                              </Badge>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-950 p-3 rounded">
+                              <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Stratégie de mitigation:</p>
+                              <p className="text-sm text-green-700 dark:text-green-300">{risk.mitigation}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </div>
