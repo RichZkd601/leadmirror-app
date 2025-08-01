@@ -1,0 +1,110 @@
+Tu es un développeur fullstack expert, UI/UX designer, product builder et intégrateur IA.
+
+Ta mission est de créer entièrement une application SaaS nommée **LeadMirror**, qui permet d’analyser des échanges commerciaux et de générer des relances efficaces à l’aide de l’IA.
+
+Je veux que tu construises cette application **en suivant les spécifications suivantes**, étape par étape :
+
+---
+
+## 1. 🔐 Authentification :
+- Connexion avec e-mail + mot de passe
+- Possibilité de s’inscrire ou de se connecter
+- Intégration future possible avec Google OAuth
+
+---
+
+## 2. 🏠 Dashboard utilisateur :
+- Interface sobre, moderne, responsive
+- Header : logo + nom de l’utilisateur + bouton déconnexion
+- Bloc principal = champ texte avec placeholder : "Collez ici votre mail ou résumé d'appel"
+- Bouton “Analyser le message”
+- Zone de résultats dynamique juste en dessous
+
+---
+
+## 3. 🤖 Analyse IA (via API OpenAI GPT-4o) :
+Lorsque l’utilisateur clique sur “Analyser le message”, l’app envoie le contenu à OpenAI avec le prompt suivant :
+
+⏬ Prompt à envoyer :
+"""
+Tu es un expert en stratégie commerciale, spécialisé en closing. Analyse ce message :
+
+[TEXTE]
+
+Donne-moi 4 éléments :
+1. Score d’intérêt du prospect (Chaud / Tiède / Froid) + justification
+2. Objections probables (3 max, avec niveau d’intensité)
+3. Conseil stratégique de relance
+4. Relance commerciale prête à copier-coller
+
+Réponds dans ce format :
+---
+
+1. Score : [...], justification : [...]
+2. Objections :
+- [...]
+3. Conseil : [...]
+4. Relance :
+Objet : [...]
+Message : [...]
+"""
+
+---
+
+## 4. 📩 Historique des analyses (back simple) :
+- Chaque analyse est enregistrée dans la base de données de l’utilisateur
+- L’historique affiche :
+  - Date
+  - Extrait du message analysé
+  - Score d’intérêt
+  - Bouton "Voir l’analyse complète"
+  - Bouton "Copier la relance"
+
+---
+
+## 5. 💳 Tarification :
+- Freemium = 3 analyses gratuites par mois
+- Abonnement à 12€/mois = analyses illimitées + historique activé
+
+Utilise Stripe pour la gestion du paiement :
+- Intégration avec abonnement mensuel récurrent
+- Gestion de l'accès premium dans la base utilisateur
+
+---
+
+## 6. 🎙️ Extension future (optionnel à créer plus tard) :
+Fonction “Analyser un appel” avec transcription vocale :
+- L’utilisateur peut uploader un fichier audio
+- Transcription via Whisper API
+- Analyse IA similaire appliquée au texte transcrit
+
+---
+
+## 7. 🎨 UX/UI :
+- Design minimaliste mais pro (blanc, gris clair, bleu foncé)
+- Responsive sur mobile
+- Font sans-serif type Inter ou Poppins
+- Évite les surcharges d’éléments
+- Affichage clair, espacé, avec boutons arrondis et animation légère sur hover
+
+---
+
+## 8. ⚙️ Stack technique recommandée :
+- Frontend : React (Next.js si possible) + TailwindCSS
+- Backend : Node.js ou Express
+- Authentification : Supabase Auth ou Firebase Auth
+- Base de données : Supabase ou PostgreSQL
+- Paiement : Stripe
+- IA : OpenAI API GPT-4o
+- Option vocale : Whisper API
+
+---
+
+Crée toute l’application en suivant ce plan **étape par étape**. Ajoute les routes nécessaires, les fichiers backend, les composants frontend, les requêtes API, la logique d’affichage, et prépare une base de données propre avec les utilisateurs et leurs analyses.
+
+Je veux que le code soit :
+- bien commenté
+- modulaire
+- propre et simple à maintenir
+
+Une fois terminé, affiche-moi l’arborescence complète des fichiers.
