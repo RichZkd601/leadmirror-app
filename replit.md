@@ -7,6 +7,7 @@ LeadMirror is a SaaS application that analyzes commercial conversations and gene
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Language: French language support implemented throughout the application interface.
 
 ## System Architecture
 

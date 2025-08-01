@@ -21,10 +21,10 @@ export default function Landing() {
                 variant="ghost" 
                 onClick={() => window.location.href = '/api/login'}
               >
-                Sign In
+                Se connecter
               </Button>
               <Button onClick={() => window.location.href = '/api/login'}>
-                Get Started
+                Commencer
               </Button>
             </div>
           </div>
@@ -35,12 +35,12 @@ export default function Landing() {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Transform Your Sales
-            <span className="text-primary block">Conversations with AI</span>
+            Transformez vos conversations
+            <span className="text-primary block">commerciales avec l'IA</span>
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Analyze your sales conversations instantly and get AI-powered insights with perfect follow-up messages. 
-            Never lose a deal to poor follow-up again.
+            Analysez instantanément vos conversations commerciales et obtenez des insights IA avec des messages de relance parfaits. 
+            Ne perdez plus jamais une vente à cause d'un mauvais suivi.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -48,11 +48,11 @@ export default function Landing() {
               onClick={() => window.location.href = '/api/login'}
               className="text-lg px-8 py-3"
             >
-              Start Free Trial
+              Essai gratuit
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-8 py-3">
-              Watch Demo
+              Voir la démo
             </Button>
           </div>
         </div>
@@ -63,10 +63,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Powered by Advanced AI Analysis
+              Alimenté par une analyse IA avancée
             </h3>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Get deep insights into your prospect's mindset and receive strategic guidance for every situation.
+              Obtenez des insights profonds sur l'état d'esprit de vos prospects et recevez des conseils stratégiques pour chaque situation.
             </p>
           </div>
 
@@ -74,9 +74,9 @@ export default function Landing() {
             <Card>
               <CardHeader>
                 <Brain className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Interest Level Analysis</CardTitle>
+                <CardTitle>Analyse du niveau d'intérêt</CardTitle>
                 <CardDescription>
-                  Instantly understand if your prospect is hot, warm, or cold with detailed justification.
+                  Comprenez instantanément si votre prospect est chaud, tiède ou froid avec une justification détaillée.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -84,9 +84,9 @@ export default function Landing() {
             <Card>
               <CardHeader>
                 <MessageSquare className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Objection Detection</CardTitle>
+                <CardTitle>Détection des objections</CardTitle>
                 <CardDescription>
-                  Identify hidden objections and concerns before they become deal-breakers.
+                  Identifiez les objections cachées et les préoccupations avant qu'elles ne deviennent des obstacles.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -94,9 +94,9 @@ export default function Landing() {
             <Card>
               <CardHeader>
                 <TrendingUp className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Strategic Follow-ups</CardTitle>
+                <CardTitle>Suivi stratégique</CardTitle>
                 <CardDescription>
-                  Get perfectly crafted follow-up messages that address specific concerns and objections.
+                  Obtenez des messages de relance parfaitement adaptés qui répondent aux préoccupations et objections spécifiques.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -109,10 +109,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-foreground mb-4">
-              Simple, Transparent Pricing
+              Tarification simple et transparente
             </h3>
             <p className="text-lg text-muted-foreground">
-              Start free, upgrade when you need more power.
+              Commencez gratuitement, passez au premium quand vous avez besoin de plus de puissance.
             </p>
           </div>
 
@@ -120,23 +120,23 @@ export default function Landing() {
             {/* Free Plan */}
             <Card>
               <CardHeader className="text-center">
-                <CardTitle className="text-xl">Free</CardTitle>
+                <CardTitle className="text-xl">Gratuit</CardTitle>
                 <div className="text-3xl font-bold">€0</div>
-                <CardDescription>per month</CardDescription>
+                <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>3 analyses per month</span>
+                    <span>3 analyses par mois</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Basic AI insights</span>
+                    <span>Insights IA basiques</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Follow-up generation</span>
+                    <span>Génération de messages de relance</span>
                   </li>
                 </ul>
                 <Button 
@@ -144,7 +144,7 @@ export default function Landing() {
                   className="w-full"
                   onClick={() => window.location.href = '/api/login'}
                 >
-                  Get Started Free
+                  Commencer gratuitement
                 </Button>
               </CardContent>
             </Card>
@@ -153,40 +153,40 @@ export default function Landing() {
             <Card className="border-primary">
               <CardHeader className="text-center">
                 <div className="inline-block bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium mb-2">
-                  Most Popular
+                  Plus populaire
                 </div>
                 <CardTitle className="text-xl">Premium</CardTitle>
                 <div className="text-3xl font-bold text-primary">€12</div>
-                <CardDescription>per month</CardDescription>
+                <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Unlimited analyses</span>
+                    <span>Analyses illimitées</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Advanced AI insights</span>
+                    <span>Insights IA avancés</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Full analysis history</span>
+                    <span>Historique complet des analyses</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Performance tracking</span>
+                    <span>Suivi des performances</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Priority support</span>
+                    <span>Support prioritaire</span>
                   </li>
                 </ul>
                 <Button 
                   className="w-full"
                   onClick={() => window.location.href = '/api/login'}
                 >
-                  Upgrade to Premium
+                  Passer au Premium
                 </Button>
               </CardContent>
             </Card>
@@ -198,10 +198,10 @@ export default function Landing() {
       <section className="py-20 bg-primary">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h3 className="text-3xl font-bold text-primary-foreground mb-4">
-            Ready to Transform Your Sales Process?
+            Prêt à transformer votre processus de vente ?
           </h3>
           <p className="text-xl text-primary-foreground/80 mb-8">
-            Join thousands of sales professionals who are already closing more deals with LeadMirror.
+            Rejoignez des milliers de commerciaux qui concluent déjà plus de ventes avec LeadMirror.
           </p>
           <Button 
             size="lg" 
@@ -209,7 +209,7 @@ export default function Landing() {
             onClick={() => window.location.href = '/api/login'}
             className="text-lg px-8 py-3"
           >
-            Start Your Free Trial Today
+            Commencez votre essai gratuit dès maintenant
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
         </div>

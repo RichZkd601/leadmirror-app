@@ -44,8 +44,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (!userLoading && !user) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: "Non autorisé",
+        description: "Vous êtes déconnecté. Reconnexion en cours...",
         variant: "destructive",
       });
       setTimeout(() => {
@@ -65,15 +65,15 @@ export default function Dashboard() {
       setCurrentAnalysis(data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
-        title: "Analysis Complete",
-        description: "Your conversation has been analyzed successfully.",
+        title: "Analyse terminée",
+        description: "Votre conversation a été analysée avec succès.",
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: "Non autorisé",
+          description: "Vous êtes déconnecté. Reconnexion en cours...",
           variant: "destructive",
         });
         setTimeout(() => {
@@ -86,13 +86,13 @@ export default function Dashboard() {
       if (errorMessage.includes("limit reached")) {
         setShowPricing(true);
         toast({
-          title: "Analysis Limit Reached",
-          description: "Upgrade to premium for unlimited analyses.",
+          title: "Limite d'analyses atteinte",
+          description: "Passez au premium pour des analyses illimitées.",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Analysis Failed",
+          title: "Échec de l'analyse",
           description: errorMessage,
           variant: "destructive",
         });
@@ -110,8 +110,8 @@ export default function Dashboard() {
     e.preventDefault();
     if (!conversationText.trim()) {
       toast({
-        title: "Missing Input",
-        description: "Please enter a conversation to analyze.",
+        title: "Saisie manquante",
+        description: "Veuillez saisir une conversation à analyser.",
         variant: "destructive",
       });
       return;
@@ -123,13 +123,13 @@ export default function Dashboard() {
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "Copied!",
-        description: "Text copied to clipboard.",
+        title: "Copié !",
+        description: "Texte copié dans le presse-papiers.",
       });
     } catch (error) {
       toast({
-        title: "Copy Failed",
-        description: "Failed to copy text to clipboard.",
+        title: "Échec de la copie",
+        description: "Impossible de copier le texte dans le presse-papiers.",
         variant: "destructive",
       });
     }
@@ -183,7 +183,7 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">
-                  Analyses used: <span className="font-medium">{user.monthlyAnalysesUsed || 0}</span>
+                  Analyses utilisées : <span className="font-medium">{user.monthlyAnalysesUsed || 0}</span>
                   {!user.isPremium && "/3"}
                 </span>
                 {!user.isPremium && (
@@ -193,7 +193,7 @@ export default function Dashboard() {
                     onClick={() => setShowPricing(true)}
                   >
                     <Crown className="w-4 h-4 mr-1" />
-                    Upgrade
+                    Mettre à niveau
                   </Button>
                 )}
               </div>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                   size="sm"
                   onClick={() => window.location.href = "/api/logout"}
                 >
-                  Sign Out
+                  Se déconnecter
                 </Button>
               </div>
             </div>
@@ -223,10 +223,10 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-foreground mb-2">
-            Analyze Your Sales Conversations
+            Analysez vos conversations commerciales
           </h2>
           <p className="text-muted-foreground">
-            Paste your email or call summary to get AI-powered insights and perfect follow-up messages.
+            Collez votre email ou résumé d'appel pour obtenir des insights IA et des messages de relance parfaits.
           </p>
         </div>
 
@@ -237,10 +237,10 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Sparkles className="w-5 h-5" />
-                  <span>Conversation Analysis</span>
+                  <span>Analyse de conversation</span>
                 </CardTitle>
                 <CardDescription>
-                  Paste your email thread, call notes, or conversation summary below
+                  Collez votre fil d'emails, notes d'appel ou résumé de conversation ci-dessous
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -249,20 +249,20 @@ export default function Dashboard() {
                     value={conversationText}
                     onChange={(e) => setConversationText(e.target.value)}
                     className="min-h-[192px] resize-none"
-                    placeholder="Example:
+                    placeholder="Exemple :
 
-Hi John,
+Bonjour Jean,
 
-Thanks for the call yesterday. I understand you're interested in our premium coaching program but mentioned you need to discuss with your business partner first. You also asked about the payment plan options.
+Merci pour l'appel d'hier. Je comprends que vous êtes intéressé par notre programme de coaching premium mais vous avez mentionné que vous devez d'abord en discuter avec votre partenaire commercial. Vous avez également demandé des informations sur les options de paiement.
 
-Looking forward to hearing from you!
+J'attends de vos nouvelles !
 
-Best,
+Cordialement,
 Sarah"
                   />
                   <div className="flex justify-between items-center">
                     <div className="text-xs text-muted-foreground">
-                      {conversationText.length} characters
+                      {conversationText.length} caractères
                     </div>
                     <Button 
                       type="submit" 
@@ -272,12 +272,12 @@ Sarah"
                       {analyzeMutation.isPending ? (
                         <>
                           <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                          Analyzing...
+                          Analyse en cours...
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          Analyze Message
+                          Analyser le message
                         </>
                       )}
                     </Button>
@@ -291,8 +291,8 @@ Sarah"
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                  <p className="text-muted-foreground">Analyzing your conversation...</p>
-                  <p className="text-sm text-muted-foreground mt-2">This usually takes 10-15 seconds</p>
+                  <p className="text-muted-foreground">Analyse de votre conversation en cours...</p>
+                  <p className="text-sm text-muted-foreground mt-2">Cela prend généralement 10-15 secondes</p>
                 </CardContent>
               </Card>
             )}
@@ -304,7 +304,7 @@ Sarah"
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle>Interest Level</CardTitle>
+                      <CardTitle>Niveau d'intérêt</CardTitle>
                       <Badge variant={getInterestColor(currentAnalysis.interestLevel)}>
                         {currentAnalysis.interestLevel.charAt(0).toUpperCase() + currentAnalysis.interestLevel.slice(1)}
                       </Badge>
@@ -320,7 +320,7 @@ Sarah"
                 {/* Objections */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Probable Objections</CardTitle>
+                    <CardTitle>Objections probables</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -340,7 +340,7 @@ Sarah"
                 {/* Strategic Advice */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Strategic Advice</CardTitle>
+                    <CardTitle>Conseils stratégiques</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground whitespace-pre-wrap">
@@ -353,25 +353,25 @@ Sarah"
                 <Card>
                   <CardHeader>
                     <div className="flex justify-between items-center">
-                      <CardTitle>Generated Follow-up</CardTitle>
+                      <CardTitle>Message de relance généré</CardTitle>
                       <Button 
                         variant="ghost" 
                         size="sm"
                         onClick={() => copyToClipboard(`Subject: ${currentAnalysis.followUpSubject}\n\n${currentAnalysis.followUpMessage}`)}
                       >
                         <Copy className="w-4 h-4 mr-1" />
-                        Copy Message
+                        Copier le message
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="bg-muted rounded-lg p-4">
                       <div className="mb-3">
-                        <p className="text-sm font-medium text-foreground">Subject:</p>
+                        <p className="text-sm font-medium text-foreground">Objet :</p>
                         <p className="text-sm text-muted-foreground">{currentAnalysis.followUpSubject}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground mb-2">Message:</p>
+                        <p className="text-sm font-medium text-foreground mb-2">Message :</p>
                         <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                           {currentAnalysis.followUpMessage}
                         </div>
@@ -388,12 +388,12 @@ Sarah"
             {/* Usage Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Your Usage</CardTitle>
+                <CardTitle>Votre utilisation</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Monthly Analyses</span>
+                    <span className="text-muted-foreground">Analyses mensuelles</span>
                     <span className="font-medium">
                       {user.monthlyAnalysesUsed || 0}{!user.isPremium && "/3"}
                     </span>
@@ -408,7 +408,7 @@ Sarah"
                     onClick={() => setShowPricing(true)}
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    Upgrade to Premium
+                    Passer au Premium
                   </Button>
                 )}
               </CardContent>
@@ -417,20 +417,20 @@ Sarah"
             {/* Quick Tips */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Tips</CardTitle>
+                <CardTitle>Conseils rapides</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-start space-x-2">
                   <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-muted-foreground">Include context about the prospect's business and pain points</p>
+                  <p className="text-muted-foreground">Incluez le contexte de l'entreprise du prospect et ses points de douleur</p>
                 </div>
                 <div className="flex items-start space-x-2">
                   <Target className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-muted-foreground">Copy entire email threads for better analysis</p>
+                  <p className="text-muted-foreground">Copiez les fils d'emails entiers pour une meilleure analyse</p>
                 </div>
                 <div className="flex items-start space-x-2">
                   <Clock className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-muted-foreground">Best results with 100-500 word conversations</p>
+                  <p className="text-muted-foreground">Meilleurs résultats avec des conversations de 100-500 mots</p>
                 </div>
               </CardContent>
             </Card>
@@ -440,14 +440,14 @@ Sarah"
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle>Recent Analyses</CardTitle>
+                    <CardTitle>Analyses récentes</CardTitle>
                     <Button 
                       variant="ghost" 
                       size="sm"
                       onClick={() => setShowHistory(true)}
                     >
                       <History className="w-4 h-4 mr-1" />
-                      View All
+                      Voir tout
                     </Button>
                   </div>
                 </CardHeader>
@@ -474,13 +474,13 @@ Sarah"
                             onClick={() => copyToClipboard(`Subject: ${analysis.followUpSubject}\n\n${analysis.followUpMessage}`)}
                           >
                             <Copy className="w-3 h-3 mr-1" />
-                            Copy follow-up
+                            Copier la relance
                           </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No analyses yet. Start by analyzing your first conversation!</p>
+                    <p className="text-sm text-muted-foreground">Aucune analyse pour l'instant. Commencez par analyser votre première conversation !</p>
                   )}
                 </CardContent>
               </Card>
@@ -493,9 +493,9 @@ Sarah"
       <Dialog open={showPricing} onOpenChange={setShowPricing}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Choose Your Plan</DialogTitle>
+            <DialogTitle className="text-2xl">Choisissez votre formule</DialogTitle>
             <DialogDescription>
-              Upgrade to unlock unlimited analyses and advanced features
+              Passez au premium pour débloquer les analyses illimitées et les fonctionnalités avancées
             </DialogDescription>
           </DialogHeader>
           
@@ -503,9 +503,9 @@ Sarah"
             {/* Free Plan */}
             <Card>
               <CardHeader className="text-center">
-                <CardTitle>Free</CardTitle>
+                <CardTitle>Gratuit</CardTitle>
                 <div className="text-3xl font-bold">€0</div>
-                <CardDescription>per month</CardDescription>
+                <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
@@ -513,23 +513,23 @@ Sarah"
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>3 analyses per month</span>
+                    <span>3 analyses par mois</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Basic AI insights</span>
+                    <span>Insights IA basiques</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Follow-up generation</span>
+                    <span>Génération de messages de relance</span>
                   </li>
                 </ul>
                 <Button variant="outline" className="w-full" disabled>
-                  Current Plan
+                  Formule actuelle
                 </Button>
               </CardContent>
             </Card>
@@ -537,10 +537,10 @@ Sarah"
             {/* Premium Plan */}
             <Card className="border-primary">
               <CardHeader className="text-center">
-                <Badge className="mb-2">Most Popular</Badge>
+                <Badge className="mb-2">Plus populaire</Badge>
                 <CardTitle>Premium</CardTitle>
                 <div className="text-3xl font-bold text-primary">€12</div>
-                <CardDescription>per month</CardDescription>
+                <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
@@ -548,31 +548,31 @@ Sarah"
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Unlimited analyses</span>
+                    <span>Analyses illimitées</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Advanced AI insights</span>
+                    <span>Insights IA avancés</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Full analysis history</span>
+                    <span>Historique complet des analyses</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Performance tracking</span>
+                    <span>Suivi des performances</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full" />
                     </div>
-                    <span>Priority support</span>
+                    <span>Support prioritaire</span>
                   </li>
                 </ul>
                 <Button 
@@ -580,7 +580,7 @@ Sarah"
                   onClick={() => window.location.href = "/subscribe"}
                 >
                   <Crown className="w-4 h-4 mr-2" />
-                  Upgrade Now
+                  Passer au premium
                 </Button>
               </CardContent>
             </Card>
@@ -592,9 +592,9 @@ Sarah"
       <Dialog open={showHistory} onOpenChange={setShowHistory}>
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Analysis History</DialogTitle>
+            <DialogTitle>Historique des analyses</DialogTitle>
             <DialogDescription>
-              Your recent conversation analyses
+              Vos analyses de conversations récentes
             </DialogDescription>
           </DialogHeader>
           
@@ -621,7 +621,7 @@ Sarah"
                         onClick={() => copyToClipboard(`Subject: ${analysis.followUpSubject}\n\n${analysis.followUpMessage}`)}
                       >
                         <Copy className="w-4 h-4 mr-1" />
-                        Copy
+                        Copier
                       </Button>
                     </div>
                     <div className="text-xs text-muted-foreground bg-muted rounded p-3">
@@ -632,7 +632,7 @@ Sarah"
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No analyses found.</p>
+                <p className="text-muted-foreground">Aucune analyse trouvée.</p>
               </div>
             )}
           </div>
