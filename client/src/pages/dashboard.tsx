@@ -133,7 +133,25 @@ interface Analysis {
 export default function Dashboard() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
-  const [conversationText, setConversationText] = useState("");
+  const [conversationText, setConversationText] = useState(`Bonjour Monsieur Dupont, merci de prendre le temps de me parler aujourd'hui. Je vous appelle suite à votre demande d'information sur nos solutions de gestion commerciale.
+
+Client: Oui bonjour, effectivement j'ai vu votre présentation en ligne et ça m'a l'air intéressant. Par contre, je ne suis pas sûr que ce soit le bon moment pour investir.
+
+Vendeur: Je comprends parfaitement votre préoccupation. Pouvez-vous me dire quels sont vos principaux défis actuels en matière de gestion commerciale ?
+
+Client: Eh bien, on perd beaucoup de temps avec notre système actuel. Mes équipes passent des heures à saisir des données et on n'a pas de vision claire sur nos performances. Mais avec la conjoncture économique...
+
+Vendeur: C'est exactement le type de problème que notre solution résout. Combien d'heures par semaine vos équipes perdent-elles actuellement ?
+
+Client: Facilement 10 heures par semaine, peut-être plus. C'est énorme quand on y pense.
+
+Vendeur: Absolument ! Si on valorise ces 10 heures à 50€ de l'heure, ça représente 500€ par semaine, soit 26 000€ par an. Notre solution coûte 8 000€ et vous ferait économiser plus de 15 000€ dès la première année.
+
+Client: Wow, vu comme ça... Mais il faut quand même l'investissement initial. Et si ça ne marche pas comme prévu ?
+
+Vendeur: Je comprends cette inquiétude. C'est pourquoi nous proposons une garantie satisfait ou remboursé de 30 jours. De plus, nous avons des témoignages clients qui montrent des résultats similaires.
+
+Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
