@@ -1,10 +1,13 @@
 import {
   users,
   analyses,
+  userMetrics,
   type User,
   type UpsertUser,
   type Analysis,
   type InsertAnalysis,
+  type UserMetrics,
+  type InsertUserMetrics,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -15,6 +18,11 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User>;
+  
+  // Metrics operations
+  createUserMetrics(userId: string): Promise<UserMetrics>;
+  getUserMetrics(userId: string): Promise<UserMetrics | undefined>;
+  updateUserMetrics(userId: string, updates: Partial<InsertUserMetrics>): Promise<UserMetrics>;
   updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User>;
   incrementAnalysisCount(userId: string): Promise<User>;
   resetMonthlyAnalyses(userId: string): Promise<User>;
@@ -154,6 +162,32 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.stripeSubscriptionId, subscriptionId));
     return user;
+  }
+
+  // Metrics operations
+  async createUserMetrics(userId: string): Promise<UserMetrics> {
+    const [metrics] = await db
+      .insert(userMetrics)
+      .values({ userId })
+      .returning();
+    return metrics;
+  }
+
+  async getUserMetrics(userId: string): Promise<UserMetrics | undefined> {
+    const [metrics] = await db
+      .select()
+      .from(userMetrics)
+      .where(eq(userMetrics.userId, userId));
+    return metrics;
+  }
+
+  async updateUserMetrics(userId: string, updates: Partial<InsertUserMetrics>): Promise<UserMetrics> {
+    const [metrics] = await db
+      .update(userMetrics)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userMetrics.userId, userId))
+      .returning();
+    return metrics;
   }
 }
 
