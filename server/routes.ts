@@ -33,7 +33,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/analyze', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { conversationText } = req.body;
+      const { conversationText, title } = req.body;
 
       if (!conversationText || conversationText.trim().length === 0) {
         return res.status(400).json({ message: "Conversation text is required" });
@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           communicationStyle: "Préfère les faits concrets, les chiffres et les garanties. Prend des décisions basées sur l'analyse coût-bénéfice."
         },
         emotionalState: {
-          primary: "cautious" as const,
+          primary: "prudent" as const,
           intensity: 6,
           indicators: ["Préoccupations économiques", "Demande de preuves", "Hésitation sur l'investissement"]
         },
@@ -171,13 +171,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emotionalTrajectory: [
           {
             phase: "Ouverture",
-            emotion: "neutral",
+            emotion: "neutre",
             intensity: 5,
             triggers: ["Appel commercial classique"]
           },
           {
             phase: "Présentation ROI",
-            emotion: "excited",
+            emotion: "enthousiaste",
             intensity: 8,
             triggers: ["Calcul 26 000€ d'économies", "Prise de conscience"]
           }
@@ -190,6 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save enhanced analysis to database
       const analysis = await storage.createAnalysis({
         userId,
+        title: title || "Analyse sans titre",
         inputText: conversationText,
         interestLevel: analysisResult.interestLevel,
         interestJustification: analysisResult.interestJustification,

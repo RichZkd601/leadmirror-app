@@ -36,6 +36,7 @@ import {
 interface Analysis {
   id: string;
   userId: string;
+  title: string;
   inputText: string;
   interestLevel: "hot" | "warm" | "cold";
   interestJustification: string;
@@ -46,7 +47,7 @@ interface Analysis {
     communicationStyle: string;
   };
   emotionalState?: {
-    primary: "excited" | "cautious" | "frustrated" | "neutral" | "enthusiastic";
+    primary: "enthousiaste" | "prudent" | "frustré" | "neutre" | "excité";
     intensity: number;
     indicators: string[];
   };
@@ -133,6 +134,7 @@ interface Analysis {
 export default function Dashboard() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
+  const [analysisTitle, setAnalysisTitle] = useState("");
   const [conversationText, setConversationText] = useState(`Bonjour Monsieur Dupont, merci de prendre le temps de me parler aujourd'hui. Je vous appelle suite à votre demande d'information sur nos solutions de gestion commerciale.
 
 Client: Oui bonjour, effectivement j'ai vu votre présentation en ligne et ça m'a l'air intéressant. Par contre, je ne suis pas sûr que ce soit le bon moment pour investir.
@@ -173,8 +175,11 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
 
   // Analysis mutation
   const analyzeMutation = useMutation({
-    mutationFn: async (text: string) => {
-      const response = await apiRequest("POST", "/api/analyze", { conversationText: text });
+    mutationFn: async (data: { text: string; title: string }) => {
+      const response = await apiRequest("POST", "/api/analyze", { 
+        conversationText: data.text, 
+        title: data.title 
+      });
       return await response.json();
     },
     onSuccess: (data) => {
@@ -232,7 +237,10 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
       });
       return;
     }
-    analyzeMutation.mutate(conversationText.trim());
+    analyzeMutation.mutate({ 
+      text: conversationText.trim(), 
+      title: analysisTitle.trim() || "Analyse sans titre" 
+    });
   };
 
   const copyToClipboard = async (text: string) => {
@@ -370,6 +378,16 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAnalyze} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Titre de l'analyse (optionnel)</label>
+                    <input
+                      type="text"
+                      value={analysisTitle}
+                      onChange={(e) => setAnalysisTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      placeholder="Ex: Appel avec Monsieur Dupont - Suivi proposition"
+                    />
+                  </div>
                   <Textarea
                     value={conversationText}
                     onChange={(e) => setConversationText(e.target.value)}
@@ -992,7 +1010,20 @@ Sarah"
             {/* Usage Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Votre utilisation</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Mes analyses</span>
+                  {user?.isPremium && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowHistory(true)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <History className="w-4 h-4 mr-1" />
+                      Analyses sauvegardées
+                    </Button>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -1017,6 +1048,49 @@ Sarah"
                 )}
               </CardContent>
             </Card>
+
+            {/* Saved Analyses Preview */}
+            {user?.isPremium && analyses && analyses.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Save className="w-4 h-4" />
+                    <span>Analyses récentes</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {analyses.slice(0, 3).map((analysis) => (
+                    <div 
+                      key={analysis.id} 
+                      className="p-3 border rounded cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setCurrentAnalysis(analysis)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium truncate">{analysis.title}</span>
+                        <Badge variant={getInterestColor(analysis.interestLevel)} className="text-xs">
+                          {analysis.interestLevel === 'hot' ? 'Chaud' : 
+                           analysis.interestLevel === 'warm' ? 'Tiède' : 'Froid'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {analysis.inputText.substring(0, 80)}...
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(analysis.createdAt).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                  ))}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={() => setShowHistory(true)}
+                  >
+                    Voir toutes les analyses
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Tips */}
             <Card>
@@ -1092,6 +1166,63 @@ Sarah"
           </div>
         </div>
       </main>
+
+      {/* History Dialog */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Analyses sauvegardées</DialogTitle>
+            <DialogDescription>
+              Consultez vos précédentes analyses de conversations (Premium uniquement)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {user?.isPremium ? (
+              analyses && analyses.length > 0 ? (
+                <div className="space-y-4">
+                  {analyses.map((analysis) => (
+                    <Card key={analysis.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setCurrentAnalysis(analysis)}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={getInterestColor(analysis.interestLevel)}>
+                              {analysis.interestLevel === 'hot' ? '🔥 Chaud' : 
+                               analysis.interestLevel === 'warm' ? '🌤 Tiède' : '❄️ Froid'}
+                            </Badge>
+                            <span className="font-medium text-sm">{analysis.title}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(analysis.createdAt).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {analysis.inputText.substring(0, 150)}...
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucune analyse trouvée dans votre historique
+                </p>
+              )
+            ) : (
+              <div className="text-center py-8">
+                <Crown className="w-12 h-12 text-accent mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  L'accès à l'historique nécessite un abonnement Premium
+                </p>
+                <Button onClick={() => setShowPricing(true)}>
+                  Passer au Premium
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Pricing Modal */}
       <Dialog open={showPricing} onOpenChange={setShowPricing}>

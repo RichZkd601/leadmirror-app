@@ -46,6 +46,7 @@ export const users = pgTable("users", {
 export const analyses = pgTable("analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull().default("Analyse sans titre"),
   inputText: text("input_text").notNull(),
   
   // Core analysis
