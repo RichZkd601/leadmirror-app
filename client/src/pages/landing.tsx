@@ -6,7 +6,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur">
+      <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
@@ -16,30 +16,38 @@ export default function Landing() {
               <h1 className="text-xl font-bold text-foreground">LeadMirror</h1>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <nav className="flex items-center space-x-4" role="navigation" aria-label="Navigation principale">
+              <a href="/security" className="text-sm font-medium hover:underline underline-offset-4" aria-label="Sécurité et conformité RGPD">
+                Sécurité RGPD
+              </a>
               <Button 
                 variant="ghost" 
                 onClick={() => window.location.href = '/api/login'}
+                aria-label="Se connecter à LeadMirror"
               >
                 Se connecter
               </Button>
-              <Button onClick={() => window.location.href = '/api/login'}>
+              <Button 
+                onClick={() => window.location.href = '/api/login'}
+                aria-label="Commencer votre essai gratuit"
+              >
                 Commencer
               </Button>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 px-4 sm:px-6 lg:px-8" role="main">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
             Transformez vos conversations
             <span className="text-primary block">commerciales avec l'IA</span>
-          </h2>
+          </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Analysez instantanément vos conversations commerciales et obtenez des insights IA avec des messages de relance parfaits. 
+            <strong>LeadMirror</strong> analyse instantanément vos conversations commerciales avec une IA révolutionnaire. 
+            Profiling psychologique DISC, prédictions d'objections, messages de relance parfaits. 
             Ne perdez plus jamais une vente à cause d'un mauvais suivi.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -51,7 +59,15 @@ export default function Landing() {
               Essai gratuit
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="text-lg px-8 py-3"
+              onClick={() => {
+                // Scroll to features section
+                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
               Voir la démo
             </Button>
           </div>
@@ -59,12 +75,12 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-muted/50">
+      <section id="features" className="py-20 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               Alimenté par une analyse IA avancée
-            </h3>
+            </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Obtenez des insights profonds sur l'état d'esprit de vos prospects et recevez des conseils stratégiques pour chaque situation.
             </p>
@@ -216,17 +232,85 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8">
+      <footer className="border-t border-border py-12 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-                <FlipHorizontal2 className="w-3 h-3 text-primary-foreground" />
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                  <FlipHorizontal2 className="w-3 h-3 text-primary-foreground" />
+                </div>
+                <span className="font-semibold text-foreground">LeadMirror</span>
               </div>
-              <span className="font-semibold text-foreground">LeadMirror</span>
+              <p className="text-sm text-muted-foreground">
+                L'IA révolutionnaire pour analyser vos conversations commerciales et multiplier vos conversions.
+              </p>
             </div>
-            <div className="text-sm text-muted-foreground">
-              © 2024 LeadMirror. All rights reserved.
+
+            {/* Product */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Produit</h4>
+              <nav className="space-y-2">
+                <a href="#features" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Fonctionnalités
+                </a>
+                <a href="/analytics" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Analytics
+                </a>
+                <a href="/integrations" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Intégrations CRM
+                </a>
+                <a href="/api/login" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Essai gratuit
+                </a>
+              </nav>
+            </div>
+
+            {/* Company */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Entreprise</h4>
+              <nav className="space-y-2">
+                <a href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Sécurité & RGPD
+                </a>
+                <a href="mailto:contact@leadmirror.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Contact
+                </a>
+                <a href="mailto:support@leadmirror.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Support
+                </a>
+              </nav>
+            </div>
+
+            {/* Legal */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Légal</h4>
+              <nav className="space-y-2">
+                <a href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Confidentialité
+                </a>
+                <a href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Conditions d'utilisation
+                </a>
+                <a href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Mentions légales
+                </a>
+              </nav>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="border-t border-border pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="text-sm text-muted-foreground">
+                © 2025 LeadMirror. Tous droits réservés. | Fait avec ❤️ pour les commerciaux français
+              </div>
+              <div className="flex space-x-6 text-sm text-muted-foreground">
+                <span>🇫🇷 Interface française</span>
+                <span>🔒 Conforme RGPD</span>
+                <span>⚡ IA GPT-4o</span>
+              </div>
             </div>
           </div>
         </div>

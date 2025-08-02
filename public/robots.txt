@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Prioritize important pages
+Allow: /analytics
+Allow: /integrations
+Allow: /security
+Allow: /subscribe
+
+# Block auth endpoints from indexing
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://leadmirror.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

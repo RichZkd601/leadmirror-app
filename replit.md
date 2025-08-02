@@ -84,6 +84,13 @@ Language: French language support implemented throughout the application interfa
 - **Stripe**: Payment processing and subscription management
 - **Replit Auth**: User authentication and session management
 
+### SEO & Accessibility Optimization (Janvier 2025)
+- **Référencement naturel complet**: Meta tags optimisés, JSON-LD Schema.org, sitemap.xml
+- **Accessibilité web**: Attributs ARIA, navigation sémantique, support lecteurs d'écran
+- **Performance**: Preconnect, DNS prefetch, manifeste web pour PWA
+- **Découvrabilité moteurs**: Robots.txt optimisé, méta géo-targeting France
+- **Standards internationaux**: Lang tags français, conformité WCAG
+
 ### Frontend Libraries
 - **shadcn/ui**: Complete UI component library built on Radix UI
 - **TanStack Query**: Server state management and caching
