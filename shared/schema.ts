@@ -86,6 +86,20 @@ export const analyses = pgTable("analyses", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// CRM Integrations table
+export const crmIntegrations = pgTable("crm_integrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: varchar("platform").notNull(), // 'notion', 'pipedrive', 'clickup', 'trello'
+  isActive: boolean("is_active").default(true),
+  config: jsonb("config").notNull(), // Configuration spécifique à chaque plateforme
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type CrmIntegration = typeof crmIntegrations.$inferSelect;
+export type InsertCrmIntegration = typeof crmIntegrations.$inferInsert;
+
 export type InsertAnalysis = typeof analyses.$inferInsert;
 export type Analysis = typeof analyses.$inferSelect;
 

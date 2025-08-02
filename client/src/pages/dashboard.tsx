@@ -31,7 +31,9 @@ import {
   Shuffle, 
   Shield, 
   ArrowRight,
-  Save
+  Save,
+  Settings,
+  Download
 } from "lucide-react";
 
 interface Analysis {
@@ -317,6 +319,15 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
                 >
                   <Target className="w-4 h-4 mr-1" />
                   Analytics
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => window.location.href = "/integrations"}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  Intégrations
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   Analyses utilisées : <span className="font-medium">{user.monthlyAnalysesUsed || 0}</span>
@@ -675,13 +686,25 @@ Sarah"
                       <label className="text-sm font-medium text-muted-foreground">Message :</label>
                       <p className="text-sm mt-1 p-3 bg-muted rounded whitespace-pre-wrap">{currentAnalysis.followUpMessage}</p>
                     </div>
-                    <Button 
-                      onClick={() => copyToClipboard(`Objet: ${currentAnalysis.followUpSubject}\n\n${currentAnalysis.followUpMessage}`)}
-                      className="w-full"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copier le message complet
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => copyToClipboard(`Objet: ${currentAnalysis.followUpSubject}\n\n${currentAnalysis.followUpMessage}`)}
+                        className="flex-1"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copier le message complet
+                      </Button>
+                      {user?.isPremium && (
+                        <Button 
+                          variant="outline"
+                          onClick={() => window.location.href = "/integrations"}
+                          className="flex-1"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Exporter CRM
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 

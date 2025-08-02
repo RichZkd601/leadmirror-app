@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { CRMIntegrationManager } from "./integrations";
 import { analyzeConversation } from "./openai";
 import { generateAdvancedInsights, analyzeEmotionalJourney } from "./advancedAnalytics";
 import { insertAnalysisSchema } from "@shared/schema";
@@ -397,6 +398,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // CRM Integration routes
+  app.get('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const integrations = await storage.getUserCrmIntegrations(userId);
+      res.json(integrations);
+    } catch (error) {
+      console.error("Error fetching CRM integrations:", error);
+      res.status(500).json({ message: "Failed to fetch CRM integrations" });
+    }
+  });
+
+  app.post('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { platform, config } = req.body;
+
+      if (!platform || !config) {
+        return res.status(400).json({ message: "Platform and config are required" });
+      }
+
+      // Tester la connexion avant de sauvegarder
+      const manager = new CRMIntegrationManager();
+      
+      try {
+        if (platform === 'notion') {
+          manager.addNotionIntegration(config.token, config.databaseId);
+        } else if (platform === 'pipedrive') {
+          manager.addPipedriveIntegration(config.apiToken, config.companyDomain);
+        } else if (platform === 'clickup') {
+          manager.addClickUpIntegration(config.apiToken);
+        } else if (platform === 'trello') {
+          manager.addTrelloIntegration(config.apiKey, config.token);
+        } else {
+          return res.status(400).json({ message: "Unsupported platform" });
+        }
+
+        const isConnected = await manager.testConnection(platform);
+        if (!isConnected) {
+          return res.status(400).json({ message: `Failed to connect to ${platform}. Please check your credentials.` });
+        }
+      } catch (error) {
+        return res.status(400).json({ message: `Connection test failed: ${error.message}` });
+      }
+
+      // Vérifier si une intégration existe déjà pour cette plateforme
+      const existingIntegration = await storage.getCrmIntegration(userId, platform);
+      
+      if (existingIntegration) {
+        // Mettre à jour l'intégration existante
+        const updatedIntegration = await storage.updateCrmIntegration(existingIntegration.id, {
+          config,
+          isActive: true,
+        });
+        res.json(updatedIntegration);
+      } else {
+        // Créer une nouvelle intégration
+        const integration = await storage.createCrmIntegration({
+          userId,
+          platform,
+          config,
+          isActive: true,
+        });
+        res.json(integration);
+      }
+    } catch (error) {
+      console.error("Error creating CRM integration:", error);
+      res.status(500).json({ message: "Failed to create CRM integration" });
+    }
+  });
+
+  app.put('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const { config, isActive } = req.body;
+
+      const integration = await storage.updateCrmIntegration(id, {
+        config,
+        isActive,
+      });
+
+      res.json(integration);
+    } catch (error) {
+      console.error("Error updating CRM integration:", error);
+      res.status(500).json({ message: "Failed to update CRM integration" });
+    }
+  });
+
+  app.delete('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+
+      await storage.deleteCrmIntegration(id);
+      res.json({ message: "Integration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting CRM integration:", error);
+      res.status(500).json({ message: "Failed to delete CRM integration" });
+    }
+  });
+
+  app.post('/api/crm/export/:analysisId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { analysisId } = req.params;
+      const { platforms, options } = req.body;
+
+      // Récupérer l'analyse
+      const analysis = await storage.getAnalysis(analysisId);
+      if (!analysis || analysis.userId !== userId) {
+        return res.status(404).json({ message: "Analysis not found" });
+      }
+
+      // Récupérer les intégrations de l'utilisateur
+      const integrations = await storage.getUserCrmIntegrations(userId);
+      const activeIntegrations = integrations.filter(i => i.isActive);
+
+      if (activeIntegrations.length === 0) {
+        return res.status(400).json({ message: "No active CRM integrations found" });
+      }
+
+      // Configurer le gestionnaire d'intégrations
+      const manager = new CRMIntegrationManager();
+      
+      for (const integration of activeIntegrations) {
+        const config = integration.config as any;
+        
+        if (integration.platform === 'notion') {
+          manager.addNotionIntegration(config.token, config.databaseId);
+        } else if (integration.platform === 'pipedrive') {
+          manager.addPipedriveIntegration(config.apiToken, config.companyDomain);
+        } else if (integration.platform === 'clickup') {
+          manager.addClickUpIntegration(config.apiToken);
+        } else if (integration.platform === 'trello') {
+          manager.addTrelloIntegration(config.apiKey, config.token);
+        }
+      }
+
+      // Exporter vers les plateformes demandées
+      const exportOptions = options || {};
+      const results = await manager.exportToAll(analysis, exportOptions);
+
+      res.json({ results, message: "Export completed" });
+    } catch (error) {
+      console.error("Error exporting to CRM:", error);
+      res.status(500).json({ message: "Failed to export to CRM" });
     }
   });
 

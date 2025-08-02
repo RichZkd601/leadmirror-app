@@ -2,15 +2,18 @@ import {
   users,
   analyses,
   userMetrics,
+  crmIntegrations,
   type User,
   type UpsertUser,
   type Analysis,
   type InsertAnalysis,
   type UserMetrics,
   type InsertUserMetrics,
+  type CrmIntegration,
+  type InsertCrmIntegration,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -31,6 +34,13 @@ export interface IStorage {
   createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
   getUserAnalyses(userId: string, limit?: number): Promise<Analysis[]>;
   getAnalysis(id: string): Promise<Analysis | undefined>;
+  
+  // CRM Integration operations
+  createCrmIntegration(integration: InsertCrmIntegration): Promise<CrmIntegration>;
+  getUserCrmIntegrations(userId: string): Promise<CrmIntegration[]>;
+  getCrmIntegration(userId: string, platform: string): Promise<CrmIntegration | undefined>;
+  updateCrmIntegration(id: string, updates: Partial<InsertCrmIntegration>): Promise<CrmIntegration>;
+  deleteCrmIntegration(id: string): Promise<void>;
   
   // Stripe operations
   getUserByStripeSubscriptionId(subscriptionId: string): Promise<User | undefined>;
@@ -154,6 +164,49 @@ export class DatabaseStorage implements IStorage {
       .from(analyses)
       .where(eq(analyses.id, id));
     return analysis;
+  }
+
+  // CRM Integration operations
+  async createCrmIntegration(integration: InsertCrmIntegration): Promise<CrmIntegration> {
+    const [newIntegration] = await db
+      .insert(crmIntegrations)
+      .values(integration)
+      .returning();
+    return newIntegration;
+  }
+
+  async getUserCrmIntegrations(userId: string): Promise<CrmIntegration[]> {
+    return await db
+      .select()
+      .from(crmIntegrations)
+      .where(eq(crmIntegrations.userId, userId))
+      .orderBy(desc(crmIntegrations.createdAt));
+  }
+
+  async getCrmIntegration(userId: string, platform: string): Promise<CrmIntegration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(crmIntegrations)
+      .where(and(eq(crmIntegrations.userId, userId), eq(crmIntegrations.platform, platform)));
+    return integration;
+  }
+
+  async updateCrmIntegration(id: string, updates: Partial<InsertCrmIntegration>): Promise<CrmIntegration> {
+    const [updatedIntegration] = await db
+      .update(crmIntegrations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(crmIntegrations.id, id))
+      .returning();
+    return updatedIntegration;
+  }
+
+  async deleteCrmIntegration(id: string): Promise<void> {
+    await db
+      .delete(crmIntegrations)
+      .where(eq(crmIntegrations.id, id));
   }
 
   async getUserByStripeSubscriptionId(subscriptionId: string): Promise<User | undefined> {
