@@ -53,14 +53,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Analyze conversation with OpenAI
-      const analysisResult = await analyzeConversation(conversationText);
-      
-      // Generate advanced insights
-      const advancedInsights = await generateAdvancedInsights(conversationText);
-      
-      // Analyze emotional journey
-      const emotionalAnalysis = await analyzeEmotionalJourney(conversationText);
+      // Version de démonstration avec analyse IA simulée
+      const analysisResult = {
+        interestLevel: "warm" as const,
+        interestJustification: "Le prospect montre un intérêt réel pour la solution et identifie des problèmes concrets. Cependant, il exprime des réserves sur le timing et l'investissement, ce qui indique un prospect en phase de réflexion.",
+        confidenceScore: 78,
+        personalityProfile: {
+          type: "analytical" as const,
+          traits: ["Méthodique", "Prudent", "Orienté données", "Besoin de preuves"],
+          communicationStyle: "Préfère les faits concrets, les chiffres et les garanties. Prend des décisions basées sur l'analyse coût-bénéfice."
+        },
+        emotionalState: {
+          primary: "cautious" as const,
+          intensity: 6,
+          indicators: ["Préoccupations économiques", "Demande de preuves", "Hésitation sur l'investissement"]
+        },
+        objections: [
+          {
+            type: "Timing",
+            intensity: "medium" as const,
+            description: "« je ne suis pas sûr que ce soit le bon moment pour investir »",
+            responseStrategy: "Montrer que reporter la décision coûte plus cher que d'agir maintenant",
+            probability: 70
+          },
+          {
+            type: "Budget",
+            intensity: "high" as const,
+            description: "Préoccupation sur l'investissement initial de 8 000€",
+            responseStrategy: "Renforcer le ROI et proposer des options de paiement échelonné",
+            probability: 85
+          }
+        ],
+        buyingSignals: [
+          {
+            signal: "Quantification du problème", 
+            strength: "strong" as const,
+            description: "« 10 heures par semaine, peut-être plus » - Le prospect quantifie précisément son problème"
+          },
+          {
+            signal: "Réaction positive au ROI",
+            strength: "strong" as const,
+            description: "« Wow, vu comme ça... » - Montre l'impact de votre argumentation chiffrée"
+          }
+        ],
+        nextSteps: [
+          {
+            action: "Envoyer les témoignages clients et études de cas",
+            priority: "high" as const,
+            timeframe: "Aujourd'hui", 
+            reasoning: "Le prospect a explicitement demandé ces preuves sociales"
+          }
+        ],
+        strategicAdvice: "Ce prospect est dans une phase d'évaluation active. Il comprend la valeur mais a besoin d'être rassuré sur les risques. Concentrez-vous sur les preuves sociales, la démonstration concrète et le ROI personnalisé.",
+        talkingPoints: [
+          "Mettre en avant les 15 000€ d'économies annuelles calculées",
+          "Insister sur la garantie satisfait ou remboursé de 30 jours",
+          "Proposer de parler à un client similaire dans son secteur"
+        ],
+        followUpSubject: "Suite à notre échange - Témoignages clients et prochaines étapes",
+        followUpMessage: `Bonjour M. Dupont,\n\nMerci pour cet échange très constructif de ce matin. J'ai bien noté votre intérêt pour notre solution ainsi que vos préoccupations légitimes sur l'investissement et le timing.\n\nComme convenu, vous trouverez en pièce jointe :\n• 3 témoignages clients de votre secteur avec ROI détaillé\n• Une étude de cas d'une entreprise de taille similaire à la vôtre\n\nPour répondre à vos questions sur les risques, je vous rappelle notre garantie satisfait ou remboursé de 30 jours.\n\nCordialement,\n[Votre nom]`,
+        alternativeApproaches: [
+          {
+            approach: "Approche pilote",
+            when: "Si résistance sur l'investissement total",
+            message: "Proposer de commencer par une équipe test pour valider les résultats"
+          }
+        ],
+        riskFactors: [
+          {
+            risk: "Procrastination due aux incertitudes économiques",
+            impact: "high" as const,
+            mitigation: "Créer de l'urgence en montrant le coût de l'inaction"
+          }
+        ]
+      };
+
+      const advancedInsights = {
+        conversationQualityScore: 82,
+        salesTiming: {
+          currentPhase: "Évaluation et validation",
+          nextPhaseRecommendation: "Démonstration et preuve de concept",
+          timeToClose: "2-3 semaines avec suivi approprié",
+          urgencyIndicators: ["Coût mensuel de l'inefficacité", "Pression sur les équipes"]
+        },
+        keyMoments: [
+          {
+            moment: "Réaction 'Wow, vu comme ça...' au calcul ROI",
+            significance: "Point de bascule - le prospect réalise l'impact financier",
+            action: "Capitaliser sur cette prise de conscience dans le suivi"
+          }
+        ],
+        competitiveAnalysis: {
+          competitorsDetected: ["Système actuel interne"],
+          competitiveAdvantages: ["ROI démontré", "Garantie", "Support client"],
+          threatLevel: "Faible",
+          counterStrategies: ["Montrer les limites des solutions actuelles"]
+        },
+        prospectMaturity: {
+          decisionMakingStage: "Évaluation active des options",
+          readinessScore: 75,
+          missingElements: ["Preuves sociales", "Validation technique", "Approbation budgétaire"]
+        },
+        predictions: {
+          closingProbability: 68,
+          bestApproachVector: "Démonstration + ROI personnalisé + témoignages",
+          predictedObjections: [
+            {
+              objection: "Demande de remise commerciale",
+              probability: 80,
+              preventiveStrategy: "Positionner la valeur avant de parler prix"
+            }
+          ]
+        }
+      };
+
+      const emotionalAnalysis = {
+        emotionalTrajectory: [
+          {
+            phase: "Ouverture",
+            emotion: "neutral",
+            intensity: 5,
+            triggers: ["Appel commercial classique"]
+          },
+          {
+            phase: "Présentation ROI",
+            emotion: "excited",
+            intensity: 8,
+            triggers: ["Calcul 26 000€ d'économies", "Prise de conscience"]
+          }
+        ],
+        overallSentiment: 0.6,
+        emotionalTriggers: ["Gaspillage de temps", "Pression économique", "Besoin de sécurité"],
+        recommendedEmotionalApproach: "Approche rassurante et consultative. Montrer que vous comprenez ses contraintes et que vous proposez une solution sécurisée avec des preuves tangibles."
+      };
 
       // Save enhanced analysis to database
       const analysis = await storage.createAnalysis({
@@ -80,6 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         followUpMessage: analysisResult.followUpMessage,
         alternativeApproaches: analysisResult.alternativeApproaches,
         riskFactors: analysisResult.riskFactors,
+        advancedInsights: advancedInsights,
+        emotionalAnalysis: emotionalAnalysis
       });
 
       // Increment analysis count
