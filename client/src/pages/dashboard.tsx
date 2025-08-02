@@ -1075,48 +1075,7 @@ Sarah"
               </CardContent>
             </Card>
 
-            {/* Saved Analyses Preview */}
-            {user?.isPremium && analyses && analyses.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Save className="w-4 h-4" />
-                    <span>Analyses récentes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {analyses.slice(0, 3).map((analysis) => (
-                    <div 
-                      key={analysis.id} 
-                      className="p-3 border rounded cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setCurrentAnalysis(analysis)}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium truncate">{analysis.title}</span>
-                        <Badge variant={getInterestColor(analysis.interestLevel)} className="text-xs">
-                          {analysis.interestLevel === 'hot' ? 'Chaud' : 
-                           analysis.interestLevel === 'warm' ? 'Tiède' : 'Froid'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {analysis.inputText.substring(0, 80)}...
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(analysis.createdAt).toLocaleDateString('fr-FR')}
-                      </span>
-                    </div>
-                  ))}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={() => setShowHistory(true)}
-                  >
-                    Voir toutes les analyses
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+
 
             {/* Quick Tips */}
             <Card>
@@ -1139,56 +1098,7 @@ Sarah"
               </CardContent>
             </Card>
 
-            {/* Recent Analyses */}
-            {user.isPremium && (
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Analyses récentes</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setShowHistory(true)}
-                    >
-                      <History className="w-4 h-4 mr-1" />
-                      Voir tout
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {analyses && analyses.length > 0 ? (
-                    <div className="space-y-3">
-                      {analyses.slice(0, 3).map((analysis: Analysis) => (
-                        <div key={analysis.id} className="border border-border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(analysis.createdAt).toLocaleDateString()}
-                            </span>
-                            <Badge variant={getInterestColor(analysis.interestLevel)} className="text-xs">
-                              {analysis.interestLevel}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-foreground font-medium truncate mb-1">
-                            {analysis.followUpSubject}
-                          </p>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-auto p-0 text-xs text-primary hover:text-primary/80"
-                            onClick={() => copyToClipboard(`Subject: ${analysis.followUpSubject}\n\n${analysis.followUpMessage}`)}
-                          >
-                            <Copy className="w-3 h-3 mr-1" />
-                            Copier la relance
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Aucune analyse pour l'instant. Commencez par analyser votre première conversation !</p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         </div>
       </main>
