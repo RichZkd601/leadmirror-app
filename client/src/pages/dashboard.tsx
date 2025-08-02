@@ -177,7 +177,7 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
   }, [user, userLoading, toast]);
 
   // Fetch user analyses
-  const { data: analyses, isLoading: analysesLoading } = useQuery({
+  const { data: analyses = [], isLoading: analysesLoading } = useQuery<Analysis[]>({
     queryKey: ["/api/analyses"],
     enabled: !!user?.isPremium,
     retry: false,
