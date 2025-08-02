@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Subscribe from "@/pages/subscribe";
 import Analytics from "@/pages/analytics";
 import Integrations from "@/pages/integrations";
+import Security from "@/pages/security";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/integrations" component={Integrations} />
+          <Route path="/security" component={Security} />
         </>
       )}
       <Route component={NotFound} />

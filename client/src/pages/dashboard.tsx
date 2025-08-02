@@ -6,6 +6,7 @@ import type { User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import Onboarding from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -160,6 +161,7 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -175,6 +177,16 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
       return;
     }
   }, [user, userLoading, toast]);
+
+  // Show onboarding for new users
+  useEffect(() => {
+    if (user && (user.monthlyAnalysesUsed || 0) === 0 && !currentAnalysis) {
+      const hasSeenOnboarding = localStorage.getItem('leadmirror-onboarding-seen');
+      if (!hasSeenOnboarding) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user, currentAnalysis]);
 
   // Fetch user analyses
   const { data: analyses = [], isLoading: analysesLoading } = useQuery<Analysis[]>({
@@ -1309,6 +1321,15 @@ Sarah"
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Onboarding Component */}
+      <Onboarding 
+        isOpen={showOnboarding} 
+        onComplete={() => {
+          setShowOnboarding(false);
+          localStorage.setItem('leadmirror-onboarding-seen', 'true');
+        }} 
+      />
     </div>
   );
 }
