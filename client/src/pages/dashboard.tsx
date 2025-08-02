@@ -30,7 +30,8 @@ import {
   Mail, 
   Shuffle, 
   Shield, 
-  ArrowRight 
+  ArrowRight,
+  Save
 } from "lucide-react";
 
 interface Analysis {
@@ -173,6 +174,13 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
     }
   }, [user, userLoading, toast]);
 
+  // Fetch user analyses
+  const { data: analyses, isLoading: analysesLoading } = useQuery({
+    queryKey: ["/api/analyses"],
+    enabled: !!user?.isPremium,
+    retry: false,
+  });
+
   // Analysis mutation
   const analyzeMutation = useMutation({
     mutationFn: async (data: { text: string; title: string }) => {
@@ -185,6 +193,7 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
     onSuccess: (data) => {
       setCurrentAnalysis(data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
       toast({
         title: "Analyse terminée",
         description: "Votre conversation a été analysée avec succès.",
@@ -219,12 +228,6 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
         });
       }
     },
-  });
-
-  // Analyses history query
-  const { data: analyses } = useQuery<Analysis[]>({
-    queryKey: ["/api/analyses"],
-    enabled: user?.isPremium === true,
   });
 
   const handleAnalyze = (e: React.FormEvent) => {
