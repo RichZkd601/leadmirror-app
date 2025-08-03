@@ -396,7 +396,7 @@ export default function Dashboard() {
                         <DropdownMenuSeparator />
                       </>
                     )}
-                    <DropdownMenuItem onClick={() => window.location.href = "/api/logout"}>
+                    <DropdownMenuItem onClick={() => window.location.href = "/api/auth/logout"}>
                       <ArrowRight className="mr-2 h-4 w-4" />
                       <span>Se déconnecter</span>
                     </DropdownMenuItem>

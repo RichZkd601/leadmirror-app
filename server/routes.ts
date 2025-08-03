@@ -115,7 +115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes - Logout
   app.post('/api/auth/logout', (req, res) => {
     (req as any).session.destroy(() => {
-      res.json({ message: "Déconnecté avec succès" });
+      res.clearCookie('connect.sid');
+      res.redirect('/');
     });
   });
 
