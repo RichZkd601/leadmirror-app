@@ -106,34 +106,47 @@ export default function LifetimeOffer() {
           </p>
         </div>
 
-        {/* Comparaison de prix */}
-        <div className="max-w-4xl mx-auto mb-12">
+        {/* Bannière exclusive - 50 places seulement */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <div className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 rounded-2xl p-8 text-center mb-8 shadow-2xl">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="bg-white/20 rounded-full px-4 py-2">
+                <span className="text-white font-bold text-lg">🔥 PLACES LIMITÉES</span>
+              </div>
+              <div className="bg-white/20 rounded-full px-4 py-2">
+                <span className="text-white font-bold text-lg">Plus que {remainingSpots}/50</span>
+              </div>
+            </div>
+            <h2 className="text-4xl font-bold text-white mb-2">OFFRE DE LANCEMENT EXCLUSIVE</h2>
+            <p className="text-xl text-white/90">Seulement 50 personnes obtiendront l'accès à vie pour 99€</p>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-8">
             {/* Prix normal */}
             <Card className="bg-white/5 border-white/20 relative">
               <CardHeader>
-                <CardTitle className="text-center text-white">Abonnement Standard</CardTitle>
+                <CardTitle className="text-center text-white">Abonnement Mensuel</CardTitle>
                 <div className="text-center">
                   <span className="text-3xl font-bold text-gray-400 line-through">€15/mois</span>
-                  <p className="text-sm text-gray-400 mt-2">€180/an • €1800 sur 10 ans</p>
+                  <p className="text-sm text-gray-400 mt-2">€180 sur 1 an</p>
                 </div>
               </CardHeader>
               <div className="absolute top-4 right-4">
-                <Badge variant="outline" className="text-gray-400">Standard</Badge>
+                <Badge variant="outline" className="text-gray-400">Après l'offre</Badge>
               </div>
             </Card>
 
             {/* Offre à vie */}
             <Card className="bg-gradient-to-b from-green-600 to-green-700 border-green-400 relative scale-105 shadow-2xl">
               <CardHeader>
-                <CardTitle className="text-center text-white">Accès à Vie</CardTitle>
+                <CardTitle className="text-center text-white">Accès à Vie - 50 Places</CardTitle>
                 <div className="text-center">
                   <span className="text-5xl font-bold text-white">99€</span>
-                  <p className="text-sm text-green-100 mt-2">Paiement unique • Économisez €1701</p>
+                  <p className="text-sm text-green-100 mt-2">Paiement unique • Économisez €81 dès la 1ère année</p>
                 </div>
               </CardHeader>
               <div className="absolute top-4 right-4">
-                <Badge className="bg-yellow-500 text-black animate-pulse">MEILLEURE OFFRE</Badge>
+                <Badge className="bg-yellow-500 text-black animate-pulse">PLACES LIMITÉES</Badge>
               </div>
             </Card>
           </div>
@@ -186,37 +199,44 @@ export default function LifetimeOffer() {
 
         {/* CTA Principal */}
         <div className="text-center">
-          <div className="bg-white/10 backdrop-blur rounded-2xl p-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Réservez votre place maintenant</h3>
-            <p className="text-blue-200 mb-6">
-              Cette offre est limitée aux 50 premiers utilisateurs seulement. 
-              Une fois épuisée, le prix passera à €15/mois.
+          <div className="bg-white/10 backdrop-blur rounded-2xl p-8 max-w-3xl mx-auto">
+            <h3 className="text-3xl font-bold mb-4">Réservez votre place maintenant</h3>
+            <p className="text-blue-200 mb-6 text-lg">
+              Seulement <strong className="text-yellow-400">{remainingSpots} places restantes</strong> sur les 50 disponibles. 
+              Après épuisement, retour au prix normal de <strong className="text-red-300">180€/an</strong>.
             </p>
             
-            <div className="mb-6">
-              <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-center gap-2 text-red-300">
-                  <Users className="h-5 w-5" />
-                  <span className="font-semibold">Plus que {remainingSpots} places disponibles</span>
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-red-500/30 to-orange-500/30 border-2 border-red-500/50 rounded-xl p-6 mb-6">
+                <div className="flex items-center justify-center gap-3 text-red-200 mb-3">
+                  <Users className="h-6 w-6" />
+                  <span className="font-bold text-xl">Places limitées : {remainingSpots}/50</span>
+                </div>
+                <div className="text-white text-lg">
+                  <strong>Économisez 81€ dès la première année</strong>
+                  <br />
+                  <span className="text-red-200">99€ à vie vs 180€/an en abonnement</span>
                 </div>
               </div>
             </div>
 
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold px-12 py-6 text-xl shadow-lg w-full md:w-auto"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold px-16 py-8 text-2xl shadow-2xl w-full md:w-auto transform hover:scale-105 transition-all duration-300"
               onClick={handlePurchase}
               disabled={purchaseMutation.isPending}
             >
               {purchaseMutation.isPending ? (
                 <LoadingSpinner size="sm" />
               ) : (
-                <>🚀 Réserver ma place à vie - 99€</>
+                <>🚀 RÉSERVER MA PLACE À VIE - 99€</>
               )}
             </Button>
             
-            <p className="text-xs text-blue-300 mt-4">
+            <p className="text-sm text-blue-300 mt-6">
               Paiement sécurisé via Stripe • Garantie satisfait ou remboursé 30 jours
+              <br />
+              <strong className="text-yellow-300">Cette offre ne reviendra jamais une fois les 50 places vendues</strong>
             </p>
           </div>
         </div>

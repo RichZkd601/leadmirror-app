@@ -57,34 +57,45 @@ export default function Landing() {
             <span className="font-semibold text-foreground">Transformez chaque conversation en opportunité fermée.</span>
           </p>
           <div className="text-center">
-            {/* Alerte offre limitée */}
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-full inline-block mb-6 animate-pulse">
-              <span className="font-bold">🚨 OFFRE LIMITÉE</span> - Plus que 50 places disponibles !
+            {/* Bannière exclusive - 50 places */}
+            <div className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 text-white px-8 py-4 rounded-2xl inline-block mb-8 animate-pulse shadow-2xl">
+              <div className="flex items-center justify-center gap-4 mb-2">
+                <span className="font-bold text-lg">🔥 LANCEMENT EXCLUSIF</span>
+                <span className="bg-white/20 rounded-full px-3 py-1 text-sm font-bold">50 PLACES SEULEMENT</span>
+              </div>
+              <div className="text-2xl font-bold">ACCÈS À VIE - 99€ au lieu de 180€/an</div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
                 onClick={() => window.location.href = '/lifetime-offer'}
-                className="text-lg px-12 py-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
+                className="text-xl px-16 py-8 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-2xl transform hover:scale-105 transition-all duration-300 font-bold"
               >
-                🚀 ACCÈS À VIE - 99€ SEULEMENT
-                <ArrowRight className="ml-2 w-5 h-5" />
+                🚀 RÉSERVER MA PLACE À VIE - 99€
+                <ArrowRight className="ml-2 w-6 h-6" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-6 border-2"
+                className="text-lg px-8 py-8 border-2"
                 onClick={() => window.location.href = '/auth'}
               >
                 Essai gratuit (3 analyses)
               </Button>
             </div>
             
-            <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-              <strong className="text-red-600">Attention :</strong> Cette offre de lancement disparaît dès que les 50 places sont vendues. 
-              Prix normal : 15€/mois après l'offre.
-            </p>
+            <div className="mt-6 max-w-lg mx-auto">
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800 dark:text-red-200 font-semibold">
+                  ⚠️ ATTENTION : Seulement 50 personnes obtiendront cet accès à vie
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Une fois les 50 places vendues, le prix passera à 15€/mois (180€/an). 
+                <br />Cette offre ne reviendra jamais.
+              </p>
+            </div>
           </div>
         </div>
       </section>
