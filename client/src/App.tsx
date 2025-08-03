@@ -24,13 +24,19 @@ function Router() {
     <Switch>
       <Route path="/security" component={Security} />
       {isLoading ? (
-        <Route path="/*" component={() => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>} />
+        <Route path="/*" component={() => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div><p className="ml-2">Chargement...</p></div>} />
       ) : !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
           <Route path="/auth" component={Auth} />
           <Route path="/lifetime-offer" component={LifetimeOffer} />
-          <Route path="/*" component={Auth} />
+          <Route path="/dashboard" component={Auth} />
+          <Route path="/audio-analysis" component={Auth} />
+          <Route path="/subscribe" component={Auth} />
+          <Route path="/analytics" component={Auth} />
+          <Route path="/integrations" component={Auth} />
+          <Route path="/profile" component={Auth} />
+          <Route path="/*" component={NotFound} />
         </>
       ) : (
         <>

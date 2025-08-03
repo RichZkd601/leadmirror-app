@@ -17,6 +17,22 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Middleware wrapper for async route handlers to catch errors
+const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// Validation middleware
+const validateRequired = (fields: string[]) => (req: any, res: any, next: any) => {
+  const missing = fields.filter(field => !req.body[field]);
+  if (missing.length > 0) {
+    return res.status(400).json({ 
+      message: `Champs requis manquants: ${missing.join(', ')}` 
+    });
+  }
+  next();
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple auth system with email/password
   app.use(getSession());
@@ -30,9 +46,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Auth routes - Register
-  app.post('/api/auth/register', async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
+  app.post('/api/auth/register', validateRequired(['email', 'password']), asyncHandler(async (req: any, res: any) => {
+    const { email, password, firstName, lastName } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email et mot de passe requis" });
@@ -68,16 +83,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           monthlyAnalysesUsed: user.monthlyAnalysesUsed
         } 
       });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Erreur lors de la création du compte" });
-    }
-  });
+  }));
 
   // Auth routes - Login
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
+  app.post('/api/auth/login', validateRequired(['email', 'password']), asyncHandler(async (req: any, res: any) => {
+    const { email, password } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email et mot de passe requis" });
@@ -106,11 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           monthlyAnalysesUsed: user.monthlyAnalysesUsed
         } 
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Erreur lors de la connexion" });
-    }
-  });
+  }));
 
   // Auth routes - Logout
   app.post('/api/auth/logout', (req, res) => {
@@ -963,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mode: 'payment',
         success_url: `${req.headers.origin}/dashboard?payment=success&type=lifetime`,
         cancel_url: `${req.headers.origin}/subscribe?payment=cancelled`,
-        customer_email: user.email,
+        customer_email: user.email || undefined,
         metadata: {
           userId: userId,
           type: 'lifetime',

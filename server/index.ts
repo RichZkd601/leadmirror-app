@@ -39,12 +39,37 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Enhanced error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Error handler caught:', err);
+    
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    let message = err.message || "Internal Server Error";
+    
+    // Translate common errors to French and hide internal details
+    if (status === 400) {
+      message = 'Requête invalide';
+    } else if (status === 401) {
+      message = 'Authentification requise';
+    } else if (status === 403) {
+      message = 'Accès interdit';
+    } else if (status === 404) {
+      message = 'Ressource introuvable';
+    } else if (status >= 500) {
+      message = 'Erreur temporaire du serveur. Veuillez réessayer.';
+      // Log detailed error but don't expose to client
+      console.error('Server error details:', err.stack);
+    }
 
-    res.status(status).json({ message });
-    throw err;
+    res.status(status).json({ 
+      message,
+      ...(process.env.NODE_ENV === 'development' && { error: err.message })
+    });
+  });
+  
+  // 404 handler for API routes
+  app.use('/api/*', (_req: Request, res: Response) => {
+    res.status(404).json({ message: 'Endpoint API introuvable' });
   });
 
   // importantly only setup vite in development and after
