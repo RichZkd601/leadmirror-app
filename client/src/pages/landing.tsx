@@ -8,9 +8,9 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Promo Banner */}
-      <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white py-2 px-4 text-center">
+      <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-2 px-4 text-center animate-pulse">
         <p className="text-sm font-medium">
-          🚀 <strong>LANCEMENT EXCLUSIF</strong> • Profitez de 3 analyses GRATUITES + 50% de réduction sur votre premier mois Premium • Offre limitée
+          🚀 <strong>LANCEMENT EXCLUSIF</strong> • Accès à vie 99€ au lieu de 180€/an • Plus que 50 places disponibles • <strong>Offre limitée</strong>
         </p>
       </div>
 
