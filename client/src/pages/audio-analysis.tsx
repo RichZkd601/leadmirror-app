@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ArrowLeft, FileAudio, Mic, Brain, Zap, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2, FlipHorizontal2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ interface AudioMetadata {
 
 export default function AudioAnalysis() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [transcription, setTranscription] = useState("");
   const [audioMetadata, setAudioMetadata] = useState<AudioMetadata | null>(null);
   const [analysisTitle, setAnalysisTitle] = useState("");
@@ -117,12 +118,14 @@ export default function AudioAnalysis() {
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-4">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour au tableau de bord
-          </Button>
-        </Link>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => setLocation("/dashboard")}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Retour au tableau de bord
+        </Button>
         <div>
           <h1 className="text-3xl font-bold flex items-center space-x-2">
             <FileAudio className="w-8 h-8 text-blue-500" />
@@ -418,11 +421,13 @@ export default function AudioAnalysis() {
                         Voir l'analyse complète
                       </Button>
                     </Link>
-                    <Link href="/dashboard" className="flex-1">
-                      <Button className="w-full" variant="outline">
-                        Retour au tableau de bord
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="flex-1 w-full" 
+                      variant="outline"
+                      onClick={() => setLocation("/dashboard")}
+                    >
+                      Retour au tableau de bord
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
