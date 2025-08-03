@@ -1280,7 +1280,7 @@ Sarah"
               <CardHeader className="text-center">
                 <Badge className="mb-2">Plus populaire</Badge>
                 <CardTitle>Premium</CardTitle>
-                <div className="text-3xl font-bold text-primary">€12</div>
+                <div className="text-3xl font-bold text-primary">€15</div>
                 <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>

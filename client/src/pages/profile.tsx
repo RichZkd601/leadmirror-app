@@ -304,7 +304,7 @@ export default function Profile() {
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-medium mb-2">Passer au Premium</h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Débloquez toutes les fonctionnalités avancées pour seulement 12€/mois.
+                      Débloquez toutes les fonctionnalités avancées pour seulement 15€/mois.
                     </p>
                     <Button onClick={handleSubscribe} className="w-full">
                       <Crown className="w-4 h-4 mr-2" />

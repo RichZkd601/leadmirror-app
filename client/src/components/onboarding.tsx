@@ -120,7 +120,7 @@ export default function Onboarding({ isOpen, onComplete }: OnboardingProps) {
               <span className="font-medium text-sm">Premium : Analyses illimitées</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Débloquez toutes les fonctionnalités IA + historique + CRM pour €12/mois
+              Débloquez toutes les fonctionnalités IA + historique + CRM pour €15/mois
             </p>
           </div>
         </div>

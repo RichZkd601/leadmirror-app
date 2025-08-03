@@ -499,9 +499,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
       });
 
-      // Create price for €12/month
+      // Create price for €15/month
       const price = await stripe.prices.create({
-        unit_amount: 1200, // €12.00 in cents
+        unit_amount: 1500, // €15.00 in cents
         currency: 'eur',
         recurring: { interval: 'month' },
         product_data: {

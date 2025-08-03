@@ -70,7 +70,7 @@ const SubscribeForm = () => {
             className="w-full" 
             disabled={!stripe || isProcessing}
           >
-            {isProcessing ? "Processing..." : "Subscribe for €12/month"}
+            {isProcessing ? "Processing..." : "Subscribe for €15/month"}
           </Button>
         </form>
       </CardContent>

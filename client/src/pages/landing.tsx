@@ -172,7 +172,7 @@ export default function Landing() {
                   Plus populaire
                 </div>
                 <CardTitle className="text-xl">Premium</CardTitle>
-                <div className="text-3xl font-bold text-primary">€12</div>
+                <div className="text-3xl font-bold text-primary">€15</div>
                 <CardDescription>par mois</CardDescription>
               </CardHeader>
               <CardContent>

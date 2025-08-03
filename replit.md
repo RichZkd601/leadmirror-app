@@ -68,7 +68,7 @@ Language: French language support implemented throughout the application interfa
 - **Provider**: Stripe for subscription management
 - **Integration**: React Stripe.js for frontend payment forms
 - **Features**: Premium subscription with usage limits for free users
-- **Billing Model**: Monthly subscription with analysis count tracking
+- **Billing Model**: Monthly subscription at €15/month with analysis count tracking
 
 ### Development Architecture
 - **Monorepo Structure**: Shared types and schemas between client and server
