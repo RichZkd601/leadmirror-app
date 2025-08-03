@@ -13,6 +13,7 @@ import Analytics from "@/pages/analytics";
 import Integrations from "@/pages/integrations";
 import Security from "@/pages/security";
 import Profile from "@/pages/profile";
+import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,10 +22,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/security" component={Security} />
-      {isLoading || !isAuthenticated ? (
+      {isLoading ? (
+        <Route path="/*" component={() => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>} />
+      ) : !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
-          <Route path="/*" component={NotFound} />
+          <Route path="/auth" component={Auth} />
+          <Route path="/*" component={Auth} />
         </>
       ) : (
         <>

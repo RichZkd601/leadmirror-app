@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupSocialAuth, isAuthenticated } from "./socialAuth";
+import { getSession } from "./socialAuth";
+import bcrypt from "bcrypt";
 import { CRMIntegrationManager } from "./integrations";
 import { analyzeConversation, transcribeAudio, analyzeAudioConversation } from "./openai";
 import { generateAdvancedInsights, analyzeEmotionalJourney } from "./advancedAnalytics";
@@ -17,24 +18,132 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupSocialAuth(app);
+  // Simple auth system with email/password
+  app.use(getSession());
 
-  // Auth routes
+  // Simple authentication middleware
+  const isAuthenticated = (req: any, res: any, next: any) => {
+    if (req.session && req.session.userId) {
+      return next();
+    }
+    return res.status(401).json({ message: "Unauthorized" });
+  };
+
+  // Auth routes - Register
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email et mot de passe requis" });
+      }
+
+      // Check if user exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Un compte existe déjà avec cet email" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+      });
+
+      // Set session
+      (req as any).session.userId = user.id;
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName,
+          isPremium: user.isPremium,
+          monthlyAnalysesUsed: user.monthlyAnalysesUsed
+        } 
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Erreur lors de la création du compte" });
+    }
+  });
+
+  // Auth routes - Login
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email et mot de passe requis" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Identifiants invalides" });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Identifiants invalides" });
+      }
+
+      // Set session
+      (req as any).session.userId = user.id;
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName,
+          isPremium: user.isPremium,
+          monthlyAnalysesUsed: user.monthlyAnalysesUsed
+        } 
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Erreur lors de la connexion" });
+    }
+  });
+
+  // Auth routes - Logout
+  app.post('/api/auth/logout', (req, res) => {
+    (req as any).session.destroy(() => {
+      res.json({ message: "Déconnecté avec succès" });
+    });
+  });
+
+  // Get current user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const user = req.user;
-      res.json(user);
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+      res.json({ 
+        id: user.id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        isPremium: user.isPremium,
+        monthlyAnalysesUsed: user.monthlyAnalysesUsed
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      res.status(500).json({ message: "Erreur lors de la récupération de l'utilisateur" });
     }
   });
 
   // Profile management routes
   app.patch('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { firstName, lastName } = req.body;
       
       const user = await storage.upsertUser({
@@ -53,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Subscription management routes
   app.post('/api/subscription/cancel', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       
       // Pour l'instant, on simule l'annulation car l'intégration Stripe complète n'est pas active
@@ -94,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/audio/transcribe", isAuthenticated, async (req: any, res) => {
     try {
       const { audioURL, fileName, fileSize, duration } = req.body;
-      const userId = req.user.id;
+      const userId = req.session.userId;
       
       if (!audioURL) {
         return res.status(400).json({ message: "Audio URL is required" });
@@ -147,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyze-audio", isAuthenticated, async (req: any, res) => {
     try {
       const { transcriptionText, title, audioPath, fileName, duration, fileSize } = req.body;
-      const userId = req.user.id;
+      const userId = req.session.userId;
 
       if (!transcriptionText) {
         return res.status(400).json({ message: "Transcription text is required" });
@@ -236,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analysis routes
   app.post('/api/analyze', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { conversationText, title } = req.body;
 
       // Comprehensive input validation
@@ -442,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user analyses history
   app.get('/api/analyses', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       
       if (!user?.isPremium) {
@@ -460,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get specific analysis
   app.get('/api/analyses/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { id } = req.params;
 
       const analysis = await storage.getAnalysis(id);
@@ -483,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe subscription routes - Create Checkout Session
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -588,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics endpoints
   app.get('/api/analytics/dashboard', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       const userMetrics = await storage.getUserMetrics(userId);
       const recentAnalyses = await storage.getUserAnalyses(userId, 30);
@@ -626,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CRM Integration routes
   app.get('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const integrations = await storage.getUserCrmIntegrations(userId);
       res.json(integrations);
     } catch (error) {
@@ -637,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { platform, config } = req.body;
 
       if (!platform || !config) {
@@ -696,7 +805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { id } = req.params;
       const { config, isActive } = req.body;
 
@@ -714,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { id } = req.params;
 
       await storage.deleteCrmIntegration(id);
@@ -727,7 +836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/crm/export/:analysisId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.session.userId;
       const { analysisId } = req.params;
       const { platforms, options } = req.body;
 
