@@ -164,14 +164,23 @@ export default function Profile() {
   const handleSubscribe = async () => {
     try {
       const response = await apiRequest("POST", "/api/create-subscription");
-      const data = await response.json();
       
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          toast({
+            title: "Erreur",
+            description: "Impossible de créer la session de paiement",
+            variant: "destructive",
+          });
+        }
       } else {
+        const errorData = await response.json();
         toast({
           title: "Erreur",
-          description: "Impossible de créer la session de paiement",
+          description: errorData.error?.message || errorData.message || "Impossible de démarrer l'abonnement",
           variant: "destructive",
         });
       }

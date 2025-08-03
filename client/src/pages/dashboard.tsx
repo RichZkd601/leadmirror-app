@@ -1321,9 +1321,14 @@ Sarah"
                   onClick={async () => {
                     try {
                       const response = await apiRequest("POST", "/api/create-subscription");
-                      const data = await response.json();
-                      if (data.checkoutUrl) {
-                        window.location.href = data.checkoutUrl;
+                      if (response.ok) {
+                        const data = await response.json();
+                        if (data.checkoutUrl) {
+                          window.location.href = data.checkoutUrl;
+                        }
+                      } else {
+                        const errorData = await response.json();
+                        console.error("Erreur API:", errorData.error?.message || errorData.message);
                       }
                     } catch (error) {
                       console.error("Erreur création abonnement:", error);

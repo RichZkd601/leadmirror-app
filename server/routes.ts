@@ -483,14 +483,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user.stripeSubscriptionId) {
-        // User already has a subscription, redirect to portal
-        const portalSession = await stripe.billingPortal.sessions.create({
-          customer: user.stripeCustomerId!,
-          return_url: `${req.protocol}://${req.get('host')}/profile`,
-        });
-        return res.json({ 
-          checkoutUrl: portalSession.url,
-          isExistingSubscription: true 
+        // User already has a subscription
+        return res.status(400).json({ 
+          message: "Vous avez déjà un abonnement actif"
         });
       }
 
