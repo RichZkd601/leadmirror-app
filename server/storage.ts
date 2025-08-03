@@ -68,6 +68,19 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        isPremium,
+        subscriptionStatus: isPremium ? "active" : "cancelled",
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
   async updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId: string): Promise<User> {
     const [user] = await db
       .update(users)
@@ -87,6 +100,7 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({
         isPremium,
+        subscriptionStatus: isPremium ? "active" : "cancelled",
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))

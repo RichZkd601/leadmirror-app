@@ -57,23 +57,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
-      if (!user?.stripeSubscriptionId) {
-        return res.status(400).json({ message: "No active subscription found" });
+      // Pour l'instant, on simule l'annulation car l'intégration Stripe complète n'est pas active
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
       }
 
-      // Cancel subscription at period end
-      const subscription = await stripe.subscriptions.update(
-        user.stripeSubscriptionId,
-        { cancel_at_period_end: true }
-      );
-
-      res.json({ 
-        message: "Subscription will be cancelled at the end of the billing period",
-        subscription 
-      });
+      // Si l'utilisateur est premium, on peut "annuler" son abonnement
+      if (user.isPremium) {
+        // Mettre à jour le statut premium de l'utilisateur
+        const updatedUser = await storage.updateUserPremiumStatus(userId, false);
+        
+        res.json({ 
+          message: "Votre abonnement premium a été annulé avec succès.",
+          user: updatedUser
+        });
+      } else {
+        return res.status(400).json({ message: "Aucun abonnement premium actif trouvé" });
+      }
     } catch (error) {
       console.error("Error cancelling subscription:", error);
-      res.status(500).json({ message: "Failed to cancel subscription" });
+      res.status(500).json({ message: "Impossible d'annuler l'abonnement" });
     }
   });
 
