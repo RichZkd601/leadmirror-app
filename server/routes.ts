@@ -161,7 +161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lastResetMonth = user.lastResetDate ? new Date(user.lastResetDate).getMonth() : -1;
       
       if (currentMonth !== lastResetMonth) {
-        await storage.resetMonthlyUsage(userId);
+        await storage.upsertUser({
+          id: userId,
+          monthlyAnalysesUsed: 0,
+          lastResetDate: new Date()
+        });
       }
 
       if (!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3) {
@@ -176,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Generate advanced insights
-      const advancedInsights = await generateAdvancedInsights(analysisResult);
+      const advancedInsights = await generateAdvancedInsights(transcriptionText);
       const emotionalAnalysis = await analyzeEmotionalJourney(transcriptionText);
 
       // Save analysis to database with audio metadata
@@ -640,7 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: `Failed to connect to ${platform}. Please check your credentials.` });
         }
       } catch (error) {
-        return res.status(400).json({ message: `Connection test failed: ${error.message}` });
+        return res.status(400).json({ message: `Connection test failed: ${(error as Error).message}` });
       }
 
       // Vérifier si une intégration existe déjà pour cette plateforme
