@@ -737,6 +737,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateUserPremiumStatus(userToUpdate.id, false);
         }
         break;
+      case 'checkout.session.completed':
+        const session = event.data.object;
+        if (session.metadata?.type === 'lifetime') {
+          const userId = session.metadata.userId;
+          if (userId) {
+            await storage.updateUserPremiumStatus(userId, true);
+            console.log(`Lifetime payment processed for user: ${userId}`);
+          }
+        }
+        break;
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
@@ -935,31 +945,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create lifetime payment - Stripe Checkout for €99
   app.post("/api/create-lifetime-payment", isAuthenticated, async (req: any, res) => {
     try {
-      const { amount = 99 } = req.body;
       const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
       
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
-            price_data: {
-              currency: 'eur',
-              product_data: {
-                name: 'LeadMirror - Accès à Vie',
-                description: 'Accès illimité et à vie à toutes les fonctionnalités Premium de LeadMirror',
-              },
-              unit_amount: amount * 100, // €99 in cents
-            },
+            price: 'price_1Rs9fdF1s37tn7hICAwHQvsE', // LeadMirror Lifetime - 99 EUR
             quantity: 1,
           },
         ],
         mode: 'payment',
         success_url: `${req.headers.origin}/dashboard?payment=success&type=lifetime`,
         cancel_url: `${req.headers.origin}/subscribe?payment=cancelled`,
+        customer_email: user.email,
         metadata: {
           userId: userId,
           type: 'lifetime',
-          amount: amount.toString(),
+          amount: '99',
         },
       });
 
