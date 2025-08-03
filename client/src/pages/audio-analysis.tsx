@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, FileAudio, Mic, Brain, Zap, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2, FlipHorizontal2 } from "lucide-react";
@@ -12,6 +12,8 @@ import { AudioUploader } from "@/components/AudioUploader";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Analysis, User } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 interface AudioMetadata {
   duration: number;
@@ -23,16 +25,27 @@ interface AudioMetadata {
 export default function AudioAnalysis() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading: userLoading } = useAuth();
   const [transcription, setTranscription] = useState("");
   const [audioMetadata, setAudioMetadata] = useState<AudioMetadata | null>(null);
   const [analysisTitle, setAnalysisTitle] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<Analysis & { audioInsights?: any } | null>(null);
 
-  // Get user data for usage limits
-  const { data: user } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
-  });
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!userLoading && !isAuthenticated) {
+      toast({
+        title: "Non autorisé",
+        description: "Vous êtes déconnecté. Reconnexion en cours...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, userLoading, toast]);
 
   // Audio analysis mutation
   const analyzeMutation = useMutation({
@@ -121,7 +134,7 @@ export default function AudioAnalysis() {
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => setLocation("/dashboard")}
+          onClick={() => window.location.href = "/dashboard"}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour au tableau de bord
@@ -424,7 +437,7 @@ export default function AudioAnalysis() {
                     <Button 
                       className="flex-1 w-full" 
                       variant="outline"
-                      onClick={() => setLocation("/dashboard")}
+                      onClick={() => window.location.href = "/dashboard"}
                     >
                       Retour au tableau de bord
                     </Button>
