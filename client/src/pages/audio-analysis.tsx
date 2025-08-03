@@ -235,8 +235,20 @@ export default function AudioAnalysis() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Left Column - Upload and Configuration */}
         <div className="space-y-6">
-          {/* Audio Upload */}
-          <Card>
+          {/* Revolutionary Audio Upload */}
+          <RevolutionaryAudioAnalyzer 
+            onAnalysisComplete={(analysis) => {
+              setAnalysisResult(analysis);
+              toast({
+                title: "Analyse Révolutionnaire Terminée",
+                description: "Votre analyse complète est maintenant disponible avec tous les insights avancés.",
+              });
+            }}
+          />
+          
+          {/* Legacy Audio Upload (hidden) */}
+          {false && (
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Mic className="w-5 h-5" />
@@ -276,9 +288,10 @@ export default function AudioAnalysis() {
               </div>
             </CardContent>
           </Card>
+          )}
 
-          {/* Analysis Configuration */}
-          {transcription && (
+          {/* Analysis Configuration (hidden) */}
+          {false && transcription && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
