@@ -36,6 +36,7 @@ import {
   Settings,
   Download
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Analysis {
   id: string;
@@ -357,21 +358,65 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
                 )}
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium">
-                    {(user.firstName?.[0] || user.email?.[0] || "U").toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-sm font-medium">
-                  {user.firstName || user.email}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => window.location.href = "/api/logout"}
-                >
-                  Se déconnecter
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2 hover:bg-muted">
+                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                        {user.profileImageUrl ? (
+                          <img 
+                            src={user.profileImageUrl} 
+                            alt="Profile" 
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm font-medium">
+                            {(user.firstName?.[0] || user.email?.[0] || "U").toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {user.firstName || user.email}
+                      </span>
+                      {user.isPremium && (
+                        <Crown className="w-4 h-4 text-yellow-500" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      <span>Profil et abonnement</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = "/analytics"}>
+                      <Target className="mr-2 h-4 w-4" />
+                      <span>Analytics</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = "/integrations"}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Intégrations</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = "/security"}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>Sécurité</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {!user.isPremium && (
+                      <>
+                        <DropdownMenuItem onClick={() => setShowPricing(true)}>
+                          <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                          <span>Passer au Premium</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={() => window.location.href = "/api/logout"}>
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      <span>Se déconnecter</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
