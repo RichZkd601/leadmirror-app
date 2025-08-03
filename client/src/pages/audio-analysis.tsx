@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, FileAudio, Mic, Brain, Zap, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileAudio, Mic, Brain, Zap, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2, FlipHorizontal2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -430,6 +430,91 @@ export default function AudioAnalysis() {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-12 bg-background mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                  <FlipHorizontal2 className="w-3 h-3 text-primary-foreground" />
+                </div>
+                <span className="font-semibold text-foreground">LeadMirror</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                L'IA révolutionnaire pour analyser vos conversations commerciales et multiplier vos conversions.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Produit</h4>
+              <nav className="space-y-2">
+                <Link href="/dashboard" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Dashboard
+                </Link>
+                <Link href="/analytics" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Analytics
+                </Link>
+                <Link href="/integrations" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Intégrations CRM
+                </Link>
+                <Link href="/audio-analysis" className="block text-sm text-primary hover:text-primary/80 transition-colors font-medium">
+                  Analyse Audio IA
+                </Link>
+              </nav>
+            </div>
+
+            {/* Company */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Entreprise</h4>
+              <nav className="space-y-2">
+                <Link href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Sécurité & RGPD
+                </Link>
+                <a href="mailto:contact@leadmirror.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Contact
+                </a>
+                <a href="mailto:support@leadmirror.com" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Support
+                </a>
+              </nav>
+            </div>
+
+            {/* Legal */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Légal</h4>
+              <nav className="space-y-2">
+                <Link href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Confidentialité
+                </Link>
+                <Link href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Conditions d'utilisation
+                </Link>
+                <Link href="/security" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Mentions légales
+                </Link>
+              </nav>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="border-t border-border pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="text-sm text-muted-foreground">
+                © 2025 LeadMirror. Tous droits réservés. | Fait avec ❤️ pour les commerciaux français
+              </div>
+              <div className="flex space-x-6 text-sm text-muted-foreground">
+                <span>🇫🇷 Interface française</span>
+                <span>🔒 Conforme RGPD</span>
+                <span>⚡ IA GPT-4o + Whisper</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
