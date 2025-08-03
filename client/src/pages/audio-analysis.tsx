@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AudioUploader } from "@/components/AudioUploader";
+import { DirectAudioUploader } from "@/components/DirectAudioUploader";
+import { RevolutionaryAudioAnalyzer } from "@/components/RevolutionaryAudioAnalyzer";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Analysis, User } from "@shared/schema";
@@ -33,6 +35,7 @@ export default function AudioAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<Analysis & { audioInsights?: any } | null>(null);
+  const [useDirectUpload, setUseDirectUpload] = useState(true); // Default to revolutionary system
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -43,7 +46,7 @@ export default function AudioAnalysis() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/auth/google";
+        setLocation("/");
       }, 500);
       return;
     }
