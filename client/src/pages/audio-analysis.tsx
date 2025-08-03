@@ -252,7 +252,7 @@ export default function AudioAnalysis() {
                     id="title"
                     value={analysisTitle}
                     onChange={(e) => setAnalysisTitle(e.target.value)}
-                    placeholder="Ex: Appel de découverte avec prospect XYZ"
+                    placeholder=""
                     className="mt-1"
                   />
                 </div>
