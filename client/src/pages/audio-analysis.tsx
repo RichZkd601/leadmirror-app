@@ -134,7 +134,10 @@ export default function AudioAnalysis() {
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => window.location.href = "/dashboard"}
+          onClick={() => {
+            console.log("Navigation vers dashboard...");
+            window.location.href = "/";
+          }}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour au tableau de bord
@@ -437,7 +440,10 @@ export default function AudioAnalysis() {
                     <Button 
                       className="flex-1 w-full" 
                       variant="outline"
-                      onClick={() => window.location.href = "/dashboard"}
+                      onClick={() => {
+                        console.log("Navigation vers dashboard...");
+                        window.location.href = "/";
+                      }}
                     >
                       Retour au tableau de bord
                     </Button>
