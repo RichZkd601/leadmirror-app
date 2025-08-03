@@ -88,9 +88,6 @@ export function AudioUploader({
         open={showModal}
         onRequestClose={() => setShowModal(false)}
         proudlyDisplayPoweredByUppy={false}
-        note="Formats supportés: MP3, WAV, M4A, AAC, FLAC, OGG • Max 50MB"
-        width={750}
-        height={550}
       />
     </div>
   );
