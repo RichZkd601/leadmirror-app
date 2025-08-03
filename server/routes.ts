@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupSocialAuth, isAuthenticated } from "./socialAuth";
 import { CRMIntegrationManager } from "./integrations";
 import { analyzeConversation, transcribeAudio, analyzeAudioConversation } from "./openai";
 import { generateAdvancedInsights, analyzeEmotionalJourney } from "./advancedAnalytics";
@@ -18,13 +18,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupSocialAuth(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user;
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -35,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile management routes
   app.patch('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { firstName, lastName } = req.body;
       
       const user = await storage.upsertUser({
@@ -54,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Subscription management routes
   app.post('/api/subscription/cancel', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       // Pour l'instant, on simule l'annulation car l'intégration Stripe complète n'est pas active
@@ -237,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analysis routes
   app.post('/api/analyze', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { conversationText, title } = req.body;
 
       if (!conversationText || conversationText.trim().length === 0) {
