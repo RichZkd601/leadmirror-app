@@ -17,6 +17,21 @@ The platform combines the expertise of top sales methodologies with advanced AI 
 Preferred communication style: Simple, everyday language.
 Language: French language support implemented throughout the application interface.
 
+## Recent Changes (January 2025)
+
+### Authentication System Migration
+- **Date**: January 3, 2025
+- **Change**: Migrated from Google OAuth to simple email/password authentication
+- **Reason**: Simplified user onboarding without requiring external OAuth setup
+- **Implementation**: Added bcrypt password hashing, email/password forms, session management
+
+### Lifetime Offer Launch
+- **Date**: January 3, 2025
+- **Change**: Introduced exclusive lifetime offer for first 50 users
+- **Pricing**: €99 one-time payment for lifetime access (vs €15/month regular pricing)
+- **Features**: Landing page redesign, dedicated offer page, Stripe Checkout integration
+- **Marketing**: Urgency-driven messaging with countdown timer and limited availability
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -44,10 +59,11 @@ Language: French language support implemented throughout the application interfa
   - Sessions: User authentication sessions
 
 ### Authentication and Authorization
-- **Provider**: Replit Auth with OAuth integration
-- **Session Management**: Express sessions with secure HTTP-only cookies
-- **User Management**: Automatic user creation/update on login
-- **Authorization**: Route-level middleware protection for authenticated endpoints
+- **Provider**: Simple email/password authentication system
+- **Password Security**: bcrypt hashing for secure password storage
+- **Session Management**: Express sessions with PostgreSQL storage via connect-pg-simple
+- **User Management**: Manual user registration and login with form validation
+- **Authorization**: Session-based middleware protection for authenticated endpoints
 
 ### Revolutionary AI Integration
 - **Primary AI**: OpenAI GPT-4o model with advanced prompt engineering for world-class analysis
@@ -65,10 +81,13 @@ Language: French language support implemented throughout the application interfa
 - **Response Handling**: Multi-structured JSON responses with comprehensive validation
 
 ### Payment Processing
-- **Provider**: Stripe for subscription management
-- **Integration**: React Stripe.js for frontend payment forms
-- **Features**: Premium subscription with usage limits for free users
-- **Billing Model**: Monthly subscription at €15/month with analysis count tracking
+- **Provider**: Stripe for subscription management and lifetime offer
+- **Integration**: React Stripe.js for frontend payment forms and Checkout sessions
+- **Lifetime Offer**: Exclusive launch offer at €99 for lifetime access (limited to 50 users)
+- **Features**: Premium subscription with usage limits for free users (3 analyses/month)
+- **Billing Model**: 
+  - Launch offer: €99 one-time payment for lifetime access
+  - Regular pricing: €15/month after launch offer ends
 
 ### Development Architecture
 - **Monorepo Structure**: Shared types and schemas between client and server

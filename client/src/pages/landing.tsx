@@ -28,13 +28,13 @@ export default function Landing() {
             <nav className="flex items-center space-x-4" role="navigation" aria-label="Navigation principale">
               <Button 
                 variant="ghost" 
-                onClick={() => window.location.href = '/api/auth/google'}
+                onClick={() => window.location.href = '/auth'}
                 aria-label="Se connecter à LeadMirror"
               >
                 Se connecter
               </Button>
               <Button 
-                onClick={() => window.location.href = '/api/auth/google'}
+                onClick={() => window.location.href = '/auth'}
                 aria-label="Commencer votre essai gratuit"
               >
                 Commencer
@@ -56,26 +56,35 @@ export default function Landing() {
             Profiling psychologique DISC, détection d'objections, scoring d'intérêt, messages de relance personnalisés. 
             <span className="font-semibold text-foreground">Transformez chaque conversation en opportunité fermée.</span>
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              onClick={() => window.location.href = '/api/auth/google'}
-              className="text-lg px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              3 analyses GRATUITES
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-3"
-              onClick={() => {
-                // Scroll to features section
-                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Voir la démo
-            </Button>
+          <div className="text-center">
+            {/* Alerte offre limitée */}
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-full inline-block mb-6 animate-pulse">
+              <span className="font-bold">🚨 OFFRE LIMITÉE</span> - Plus que 50 places disponibles !
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                onClick={() => window.location.href = '/lifetime-offer'}
+                className="text-lg px-12 py-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
+                🚀 ACCÈS À VIE - 99€ SEULEMENT
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-6 border-2"
+                onClick={() => window.location.href = '/auth'}
+              >
+                Essai gratuit (3 analyses)
+              </Button>
+            </div>
+            
+            <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
+              <strong className="text-red-600">Attention :</strong> Cette offre de lancement disparaît dès que les 50 places sont vendues. 
+              Prix normal : 15€/mois après l'offre.
+            </p>
           </div>
         </div>
       </section>

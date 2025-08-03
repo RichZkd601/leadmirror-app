@@ -14,6 +14,7 @@ import Integrations from "@/pages/integrations";
 import Security from "@/pages/security";
 import Profile from "@/pages/profile";
 import Auth from "@/pages/auth";
+import LifetimeOffer from "@/pages/lifetime-offer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/auth" component={Auth} />
+          <Route path="/lifetime-offer" component={LifetimeOffer} />
           <Route path="/*" component={Auth} />
         </>
       ) : (

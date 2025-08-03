@@ -589,6 +589,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe payment route for lifetime offer
+  app.post("/api/create-lifetime-payment", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      // Vérifier si l'utilisateur a déjà un accès premium
+      if (user.isPremium) {
+        return res.status(400).json({ message: "Vous avez déjà un accès premium" });
+      }
+
+      // Créer une session Stripe Checkout pour l'offre à vie
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: 'LeadMirror - Accès à Vie',
+                description: 'Accès illimité à vie à toutes les fonctionnalités premium de LeadMirror',
+                images: ['https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400'],
+              },
+              unit_amount: 9900, // 99€ en centimes
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success`,
+        cancel_url: `${req.protocol}://${req.get('host')}/lifetime-offer?payment=cancelled`,
+        client_reference_id: userId,
+        metadata: {
+          userId: userId,
+          offer_type: 'lifetime',
+        },
+      });
+
+      res.json({ checkoutUrl: session.url });
+    } catch (error: any) {
+      console.error("Erreur création paiement:", error);
+      res.status(500).json({ message: "Erreur lors de la création du paiement: " + error.message });
+    }
+  });
+
   // Stripe subscription routes - Create Checkout Session
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
