@@ -94,7 +94,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/audio/transcribe", isAuthenticated, async (req: any, res) => {
     try {
       const { audioURL, fileName, fileSize, duration } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       if (!audioURL) {
         return res.status(400).json({ message: "Audio URL is required" });
@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analyze-audio", isAuthenticated, async (req: any, res) => {
     try {
       const { transcriptionText, title, audioPath, fileName, duration, fileSize } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
 
       if (!transcriptionText) {
         return res.status(400).json({ message: "Transcription text is required" });
@@ -239,8 +239,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const { conversationText, title } = req.body;
 
-      if (!conversationText || conversationText.trim().length === 0) {
-        return res.status(400).json({ message: "Conversation text is required" });
+      // Comprehensive input validation
+      if (!conversationText || typeof conversationText !== 'string' || conversationText.trim().length === 0) {
+        return res.status(400).json({ message: "Le texte de conversation est obligatoire et ne peut pas être vide." });
+      }
+
+      if (conversationText.length > 50000) {
+        return res.status(400).json({ message: "Le texte de conversation ne peut pas dépasser 50 000 caractères." });
+      }
+
+      if (title && (typeof title !== 'string' || title.length > 200)) {
+        return res.status(400).json({ message: "Le titre doit être une chaîne de moins de 200 caractères." });
       }
 
       // Get user to check analysis limits
@@ -433,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user analyses history
   app.get('/api/analyses', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user?.isPremium) {
@@ -451,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get specific analysis
   app.get('/api/analyses/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
 
       const analysis = await storage.getAnalysis(id);
@@ -474,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe subscription routes - Create Checkout Session
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -579,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics endpoints
   app.get('/api/analytics/dashboard', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       const userMetrics = await storage.getUserMetrics(userId);
       const recentAnalyses = await storage.getUserAnalyses(userId, 30);
@@ -617,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CRM Integration routes
   app.get('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const integrations = await storage.getUserCrmIntegrations(userId);
       res.json(integrations);
     } catch (error) {
@@ -628,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/crm/integrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { platform, config } = req.body;
 
       if (!platform || !config) {
@@ -687,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const { config, isActive } = req.body;
 
@@ -705,7 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/crm/integrations/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
 
       await storage.deleteCrmIntegration(id);
@@ -718,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/crm/export/:analysisId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { analysisId } = req.params;
       const { platforms, options } = req.body;
 

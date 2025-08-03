@@ -60,6 +60,15 @@ export interface AnalysisResult {
 }
 
 export async function analyzeConversation(conversationText: string): Promise<AnalysisResult> {
+  // Input validation
+  if (!conversationText || typeof conversationText !== 'string' || conversationText.trim().length === 0) {
+    throw new Error("Le texte de conversation est obligatoire");
+  }
+
+  if (conversationText.length > 50000) {
+    throw new Error("Le texte de conversation est trop long (maximum 50 000 caractères)");
+  }
+
   try {
     const prompt = `Tu es le meilleur expert mondial en psychologie commerciale, analyse comportementale et stratégie de vente. Tu combines l'expertise de Grant Cardone, Jordan Belfort, et Daniel Kahneman.
 

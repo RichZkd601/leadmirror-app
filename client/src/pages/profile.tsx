@@ -77,7 +77,7 @@ export default function Profile() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/api/auth/google";
         }, 500);
         return;
       }
@@ -109,7 +109,7 @@ export default function Profile() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          window.location.href = "/api/auth/google";
         }, 500);
         return;
       }
@@ -140,7 +140,7 @@ export default function Profile() {
               <p className="text-muted-foreground mb-4">
                 Vous devez être connecté pour accéder à votre profil.
               </p>
-              <Button onClick={() => window.location.href = "/api/login"}>
+              <Button onClick={() => window.location.href = "/api/auth/google"}>
                 Se connecter
               </Button>
             </div>

@@ -28,13 +28,13 @@ export default function Landing() {
             <nav className="flex items-center space-x-4" role="navigation" aria-label="Navigation principale">
               <Button 
                 variant="ghost" 
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/api/auth/google'}
                 aria-label="Se connecter à LeadMirror"
               >
                 Se connecter
               </Button>
               <Button 
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/api/auth/google'}
                 aria-label="Commencer votre essai gratuit"
               >
                 Commencer
@@ -59,7 +59,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/api/auth/google'}
               className="text-lg px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               3 analyses GRATUITES
