@@ -88,19 +88,7 @@ export class DatabaseStorage implements IStorage {
         stripeCustomerId,
         stripeSubscriptionId,
         isPremium: true,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
-  }
-
-  async updateUserPremiumStatus(userId: string, isPremium: boolean): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        isPremium,
-        subscriptionStatus: isPremium ? "active" : "cancelled",
+        subscriptionStatus: "active",
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
