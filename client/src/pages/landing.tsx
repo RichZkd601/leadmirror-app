@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FlipHorizontal2, Brain, MessageSquare, TrendingUp, CheckCircle, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FlipHorizontal2, Brain, MessageSquare, TrendingUp, CheckCircle, ArrowRight, Shield, Lock, Database } from "lucide-react";
 import Footer from "@/components/Footer";
 
 export default function Landing() {
@@ -18,9 +19,6 @@ export default function Landing() {
             </div>
             
             <nav className="flex items-center space-x-4" role="navigation" aria-label="Navigation principale">
-              <a href="/security" className="text-sm font-medium hover:underline underline-offset-4" aria-label="Sécurité et conformité RGPD">
-                Sécurité RGPD
-              </a>
               <Button 
                 variant="ghost" 
                 onClick={() => window.location.href = '/api/login'}
@@ -229,6 +227,108 @@ export default function Landing() {
             Commencez votre essai gratuit dès maintenant
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
+        </div>
+      </section>
+
+      {/* Security & GDPR Section */}
+      <section className="py-16 bg-muted/30" id="security">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-green-100 dark:bg-green-950 rounded-full">
+                <Shield className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Sécurité & Conformité RGPD
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Votre confiance est notre priorité. LeadMirror respecte les plus hauts standards de sécurité et de protection des données.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            {/* GDPR Compliance */}
+            <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span>Conformité RGPD</span>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    Certifié
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">Vos droits garantis</h4>
+                    <ul className="text-sm space-y-1 text-green-700 dark:text-green-300">
+                      <li>• Droit d'accès à vos données</li>
+                      <li>• Droit de rectification et suppression</li>
+                      <li>• Droit à la portabilité</li>
+                      <li>• Droit d'opposition au traitement</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">Notre engagement</h4>
+                    <ul className="text-sm space-y-1 text-green-700 dark:text-green-300">
+                      <li>• Données stockées en Europe (Neon)</li>
+                      <li>• Chiffrement de bout en bout</li>
+                      <li>• Anonymisation complète des analyses</li>
+                      <li>• Suppression automatique sur demande</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security Features */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Lock className="w-5 h-5 text-blue-600" />
+                  <span>Sécurité technique</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <Database className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">Infrastructure sécurisée</p>
+                      <p className="text-xs text-muted-foreground">Hébergement Replit avec SSL/TLS, authentification sécurisée</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Brain className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">IA responsable</p>
+                      <p className="text-xs text-muted-foreground">OpenAI GPT-4o avec prompts sécurisés et anonymisés</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-4 h-4 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">Audit de sécurité</p>
+                      <p className="text-xs text-muted-foreground">Tests réguliers, monitoring des accès, logs sécurisés</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/security'}
+              className="border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-300 dark:hover:bg-green-950"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Voir tous les détails de sécurité
+            </Button>
+          </div>
         </div>
       </section>
 
