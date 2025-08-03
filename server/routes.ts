@@ -482,8 +482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      if (user.stripeSubscriptionId) {
-        // User already has a subscription
+      if (user.stripeSubscriptionId && user.subscriptionStatus === 'active') {
+        // User already has an active subscription
         return res.status(400).json({ 
           message: "Vous avez déjà un abonnement actif"
         });
