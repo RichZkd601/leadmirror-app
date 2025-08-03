@@ -34,7 +34,9 @@ import {
   ArrowRight,
   Save,
   Settings,
-  Download
+  Download,
+  FileAudio,
+  Mic
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -444,7 +446,7 @@ Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
                   <span>Analyse de conversation</span>
                 </CardTitle>
                 <CardDescription>
-                  Collez votre fil d'emails, notes d'appel ou résumé de conversation ci-dessous
+                  Analysez vos conversations texte ou uploadez des fichiers audio d'appels commerciaux
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -478,23 +480,34 @@ Sarah"
                     <div className="text-xs text-muted-foreground">
                       {conversationText.length} caractères
                     </div>
-                    <Button 
-                      type="submit" 
-                      disabled={analyzeMutation.isPending || !conversationText.trim()}
-                      className="px-6"
-                    >
-                      {analyzeMutation.isPending ? (
-                        <>
-                          <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                          Analyse en cours...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Analyser le message
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/audio-analysis"}
+                        className="px-4"
+                      >
+                        <FileAudio className="w-4 h-4 mr-2" />
+                        Audio
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={analyzeMutation.isPending || !conversationText.trim()}
+                        className="px-6"
+                      >
+                        {analyzeMutation.isPending ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                            Analyse en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Analyser le message
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </CardContent>

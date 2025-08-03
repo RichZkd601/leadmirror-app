@@ -49,6 +49,13 @@ export const analyses = pgTable("analyses", {
   title: varchar("title").notNull().default("Analyse sans titre"),
   inputText: text("input_text").notNull(),
   
+  // Audio analysis fields
+  audioFilePath: varchar("audio_file_path"), // Path to uploaded audio file
+  transcriptionText: text("transcription_text"), // Whisper transcription result
+  audioProcessingStatus: varchar("audio_processing_status").default("none"), // none, processing, completed, failed
+  audioDurationMinutes: integer("audio_duration_minutes"), // Duration in minutes
+  audioFileSize: integer("audio_file_size"), // File size in bytes
+  
   // Core analysis
   interestLevel: varchar("interest_level").notNull(), // "hot", "warm", "cold"
   interestJustification: text("interest_justification").notNull(),

@@ -1,0 +1,370 @@
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { ArrowLeft, FileAudio, Mic, Brain, Zap, MessageSquare, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AudioUploader } from "@/components/AudioUploader";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Analysis, User } from "@shared/schema";
+
+interface AudioMetadata {
+  duration: number;
+  fileSize: number;
+  fileName: string;
+  audioPath: string;
+}
+
+export default function AudioAnalysis() {
+  const { toast } = useToast();
+  const [transcription, setTranscription] = useState("");
+  const [audioMetadata, setAudioMetadata] = useState<AudioMetadata | null>(null);
+  const [analysisTitle, setAnalysisTitle] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<Analysis & { audioInsights?: any } | null>(null);
+
+  // Get user data for usage limits
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+  });
+
+  // Audio analysis mutation
+  const analyzeMutation = useMutation({
+    mutationFn: async (data: {
+      transcriptionText: string;
+      title: string;
+      audioPath: string;
+      fileName: string;
+      duration: number;
+      fileSize: number;
+    }) => {
+      const response = await apiRequest("POST", "/api/analyze-audio", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setAnalysisResult(data);
+      setIsAnalyzing(false);
+      toast({
+        title: "Analyse terminée",
+        description: "L'analyse IA de votre conversation audio est maintenant disponible.",
+      });
+    },
+    onError: (error) => {
+      setIsAnalyzing(false);
+      toast({
+        title: "Erreur d'analyse",
+        description: error.message || "Impossible d'analyser la conversation audio.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleTranscriptionComplete = (
+    transcriptionText: string,
+    metadata: AudioMetadata
+  ) => {
+    setTranscription(transcriptionText);
+    setAudioMetadata(metadata);
+  };
+
+  const handleAnalyze = () => {
+    if (!transcription || !audioMetadata) {
+      toast({
+        title: "Transcription manquante",
+        description: "Veuillez d'abord uploader et transcrire un fichier audio.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    analyzeMutation.mutate({
+      transcriptionText: transcription,
+      title: analysisTitle || "Analyse audio",
+      audioPath: audioMetadata.audioPath,
+      fileName: audioMetadata.fileName,
+      duration: audioMetadata.duration,
+      fileSize: audioMetadata.fileSize,
+    });
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const getInterestLevelColor = (level: string) => {
+    switch (level) {
+      case "hot": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300";
+      case "warm": return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300";
+      case "cold": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center space-x-4">
+        <Link href="/dashboard">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour au tableau de bord
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold flex items-center space-x-2">
+            <FileAudio className="w-8 h-8 text-blue-500" />
+            <span>Analyse audio IA</span>
+          </h1>
+          <p className="text-muted-foreground">
+            Uploadez et analysez vos appels commerciaux avec l'IA Whisper et GPT-4o
+          </p>
+        </div>
+      </div>
+
+      {/* Usage Info */}
+      {user && (
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Zap className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-800 dark:text-blue-200">
+                    {user.isPremium ? "Premium - Analyses illimitées" : `Plan gratuit - ${user.monthlyAnalysesUsed || 0}/3 analyses utilisées ce mois`}
+                  </p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300">
+                    {user.isPremium ? "Transcription et analyse audio avancée incluses" : "Upgrade vers Premium pour des analyses illimitées"}
+                  </p>
+                </div>
+              </div>
+              {!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3 && (
+                <Link href="/subscribe">
+                  <Button size="sm">
+                    Upgrade vers Premium
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Left Column - Upload and Configuration */}
+        <div className="space-y-6">
+          {/* Audio Upload */}
+          <AudioUploader
+            onTranscriptionComplete={handleTranscriptionComplete}
+            isAnalyzing={isAnalyzing}
+          />
+
+          {/* Analysis Configuration */}
+          {transcription && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Brain className="w-5 h-5" />
+                  <span>Configuration de l'analyse</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Titre de l'analyse</Label>
+                  <Input
+                    id="title"
+                    value={analysisTitle}
+                    onChange={(e) => setAnalysisTitle(e.target.value)}
+                    placeholder="Ex: Appel de découverte avec prospect XYZ"
+                    className="mt-1"
+                  />
+                </div>
+
+                {audioMetadata && (
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">Informations audio</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Fichier</p>
+                        <p className="font-medium">{audioMetadata.fileName}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Durée</p>
+                        <p className="font-medium">{formatDuration(audioMetadata.duration)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Taille</p>
+                        <p className="font-medium">{formatFileSize(audioMetadata.fileSize)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Statut</p>
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Transcrit
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || !transcription || (user && !user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3)}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Brain className="w-4 h-4 mr-2 animate-pulse" />
+                      Analyse en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="w-4 h-4 mr-2" />
+                      Analyser la conversation
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column - Transcription and Results */}
+        <div className="space-y-6">
+          {/* Transcription Preview */}
+          {transcription && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Transcription</span>
+                </CardTitle>
+                <CardDescription>
+                  Texte transcrit de votre fichier audio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-muted/50 p-4 rounded-lg max-h-60 overflow-y-auto">
+                  <p className="text-sm whitespace-pre-wrap">{transcription}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Analysis Results */}
+          {analysisResult && (
+            <div className="space-y-6">
+              {/* Interest Level & Confidence */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5" />
+                    <span>Niveau d'intérêt détecté</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Badge className={getInterestLevelColor(analysisResult.interestLevel)}>
+                      {analysisResult.interestLevel.toUpperCase()}
+                    </Badge>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">{analysisResult.confidenceScore}%</p>
+                      <p className="text-sm text-muted-foreground">Confiance</p>
+                    </div>
+                  </div>
+                  <p className="text-sm">{analysisResult.interestJustification}</p>
+                </CardContent>
+              </Card>
+
+              {/* Audio Insights */}
+              {analysisResult.audioInsights && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Mic className="w-5 h-5" />
+                      <span>Insights audio avancés</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Rythme de conversation</p>
+                        <p className="font-medium capitalize">{analysisResult.audioInsights.conversationPacing}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Répartition de parole</p>
+                        <p className="font-medium">
+                          Vendeur: {analysisResult.audioInsights.speakingRatio.seller}% | 
+                          Prospect: {analysisResult.audioInsights.speakingRatio.prospect}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {analysisResult.audioInsights.silencePeriods.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Moments de silence significatifs</p>
+                        <ul className="text-sm space-y-1">
+                          {analysisResult.audioInsights.silencePeriods.map((period: string, index: number) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <span className="text-muted-foreground">•</span>
+                              <span>{period}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {analysisResult.audioInsights.audioQualityNotes.length > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Notes sur la qualité audio</p>
+                        <ul className="text-sm space-y-1">
+                          {analysisResult.audioInsights.audioQualityNotes.map((note: string, index: number) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <span className="text-muted-foreground">•</span>
+                              <span>{note}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Actions */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Link href={`/analysis/${analysisResult.id}`} className="flex-1">
+                      <Button className="w-full" variant="default">
+                        Voir l'analyse complète
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard" className="flex-1">
+                      <Button className="w-full" variant="outline">
+                        Retour au tableau de bord
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

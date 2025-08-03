@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import AudioAnalysis from "@/pages/audio-analysis";
 import Subscribe from "@/pages/subscribe";
 import Analytics from "@/pages/analytics";
 import Integrations from "@/pages/integrations";
@@ -23,6 +24,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/audio-analysis" component={AudioAnalysis} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/integrations" component={Integrations} />

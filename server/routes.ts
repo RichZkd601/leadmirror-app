@@ -4,8 +4,10 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { CRMIntegrationManager } from "./integrations";
-import { analyzeConversation } from "./openai";
+import { analyzeConversation, transcribeAudio, analyzeAudioConversation } from "./openai";
 import { generateAdvancedInsights, analyzeEmotionalJourney } from "./advancedAnalytics";
+import { ObjectStorageService } from "./objectStorage";
+import fs from "fs";
 import { insertAnalysisSchema } from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -72,6 +74,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling subscription:", error);
       res.status(500).json({ message: "Failed to cancel subscription" });
+    }
+  });
+
+  // Audio upload and transcription routes
+  app.post("/api/audio/upload", isAuthenticated, async (req: any, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getAudioUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting audio upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.post("/api/audio/transcribe", isAuthenticated, async (req: any, res) => {
+    try {
+      const { audioURL, fileName, fileSize, duration } = req.body;
+      const userId = req.user.claims.sub;
+      
+      if (!audioURL) {
+        return res.status(400).json({ message: "Audio URL is required" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      
+      // Normalize the audio path
+      const audioPath = objectStorageService.normalizeAudioPath(audioURL);
+      
+      // Get the audio file from object storage
+      const audioFile = await objectStorageService.getAudioFile(audioPath);
+      
+      // Download audio to temp file for transcription
+      const tempAudioPath = await objectStorageService.downloadAudioToTemp(audioFile);
+      
+      try {
+        // Transcribe the audio using Whisper
+        console.log("Starting audio transcription...");
+        const transcriptionResult = await transcribeAudio(tempAudioPath);
+        
+        console.log("Transcription completed successfully");
+        
+        // Clean up temp file
+        fs.unlinkSync(tempAudioPath);
+        
+        res.json({
+          transcription: transcriptionResult.text,
+          duration: transcriptionResult.duration,
+          audioPath: audioPath,
+          fileName: fileName
+        });
+      } catch (transcriptionError) {
+        // Clean up temp file on error
+        if (fs.existsSync(tempAudioPath)) {
+          fs.unlinkSync(tempAudioPath);
+        }
+        throw transcriptionError;
+      }
+      
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      res.status(500).json({ 
+        message: "Failed to transcribe audio: " + (error as Error).message 
+      });
+    }
+  });
+
+  // Enhanced audio conversation analysis route
+  app.post("/api/analyze-audio", isAuthenticated, async (req: any, res) => {
+    try {
+      const { transcriptionText, title, audioPath, fileName, duration, fileSize } = req.body;
+      const userId = req.user.claims.sub;
+
+      if (!transcriptionText) {
+        return res.status(400).json({ message: "Transcription text is required" });
+      }
+
+      // Check usage limits for free users
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const currentMonth = new Date().getMonth();
+      const lastResetMonth = user.lastResetDate ? new Date(user.lastResetDate).getMonth() : -1;
+      
+      if (currentMonth !== lastResetMonth) {
+        await storage.resetMonthlyUsage(userId);
+      }
+
+      if (!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3) {
+        return res.status(403).json({ message: "Monthly analysis limit reached. Upgrade to premium for unlimited analyses." });
+      }
+
+      // Perform enhanced audio conversation analysis
+      console.log("Starting enhanced audio conversation analysis...");
+      const analysisResult = await analyzeAudioConversation(transcriptionText, {
+        duration,
+        fileSize
+      });
+
+      // Generate advanced insights
+      const advancedInsights = await generateAdvancedInsights(analysisResult);
+      const emotionalAnalysis = await analyzeEmotionalJourney(transcriptionText);
+
+      // Save analysis to database with audio metadata
+      const analysis = await storage.createAnalysis({
+        userId: userId,
+        title: title || "Analyse audio sans titre",
+        inputText: transcriptionText,
+        audioFilePath: audioPath,
+        transcriptionText: transcriptionText,
+        audioProcessingStatus: "completed",
+        audioDurationMinutes: Math.round(duration / 60),
+        audioFileSize: fileSize,
+        interestLevel: analysisResult.interestLevel,
+        interestJustification: analysisResult.interestJustification,
+        confidenceScore: analysisResult.confidenceScore,
+        personalityProfile: analysisResult.personalityProfile,
+        emotionalState: analysisResult.emotionalState,
+        objections: analysisResult.objections,
+        buyingSignals: analysisResult.buyingSignals,
+        nextSteps: analysisResult.nextSteps,
+        strategicAdvice: analysisResult.strategicAdvice,
+        talkingPoints: analysisResult.talkingPoints,
+        followUpSubject: analysisResult.followUpSubject,
+        followUpMessage: analysisResult.followUpMessage,
+        alternativeApproaches: analysisResult.alternativeApproaches,
+        riskFactors: analysisResult.riskFactors,
+        advancedInsights: {
+          ...advancedInsights,
+          audioInsights: analysisResult.audioInsights
+        },
+        emotionalAnalysis: emotionalAnalysis,
+      });
+
+      // Update user analysis count
+      await storage.incrementAnalysisCount(userId);
+
+      console.log("Audio conversation analysis completed successfully");
+
+      res.json({
+        ...analysis,
+        audioInsights: analysisResult.audioInsights
+      });
+    } catch (error) {
+      console.error("Error analyzing audio conversation:", error);
+      res.status(500).json({ 
+        message: "Failed to analyze audio conversation: " + (error as Error).message 
+      });
     }
   });
 
