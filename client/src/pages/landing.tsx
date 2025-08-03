@@ -197,7 +197,7 @@ export default function Landing() {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => window.location.href = '/auth'}
                 >
                   Commencer gratuitement
                 </Button>
@@ -243,7 +243,7 @@ export default function Landing() {
                 </ul>
                 <Button 
                   className="w-full"
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => window.location.href = '/auth'}
                 >
                   Passer au Premium
                 </Button>
@@ -348,7 +348,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               variant="secondary"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/auth'}
               className="text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100"
             >
               Commencer mes 3 analyses gratuites
@@ -357,7 +357,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/auth'}
               className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-primary"
             >
               Voir la démo live
@@ -501,7 +501,7 @@ export default function Landing() {
                 <a href="/integrations" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Intégrations CRM
                 </a>
-                <a href="/api/login" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a href="/auth" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Essai gratuit
                 </a>
               </nav>

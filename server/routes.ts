@@ -932,6 +932,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create lifetime payment - Stripe Checkout for €99
+  app.post("/api/create-lifetime-payment", isAuthenticated, async (req: any, res) => {
+    try {
+      const { amount = 99 } = req.body;
+      const userId = req.session.userId;
+      
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: 'LeadMirror - Accès à Vie',
+                description: 'Accès illimité et à vie à toutes les fonctionnalités Premium de LeadMirror',
+              },
+              unit_amount: amount * 100, // €99 in cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${req.headers.origin}/dashboard?payment=success&type=lifetime`,
+        cancel_url: `${req.headers.origin}/subscribe?payment=cancelled`,
+        metadata: {
+          userId: userId,
+          type: 'lifetime',
+          amount: amount.toString(),
+        },
+      });
+
+      res.json({ checkoutUrl: session.url });
+    } catch (error: any) {
+      console.error("Error creating lifetime payment:", error);
+      res.status(500).json({ message: "Erreur lors de la création du paiement: " + error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
