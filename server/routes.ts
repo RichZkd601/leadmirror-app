@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe subscription routes
+  // Stripe subscription routes - Create Checkout Session
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -483,10 +483,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (user.stripeSubscriptionId) {
-        const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-        return res.json({
-          subscriptionId: subscription.id,
-          clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        // User already has a subscription, redirect to portal
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: user.stripeCustomerId!,
+          return_url: `${req.protocol}://${req.get('host')}/profile`,
+        });
+        return res.json({ 
+          checkoutUrl: portalSession.url,
+          isExistingSubscription: true 
         });
       }
 
@@ -494,10 +498,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No user email on file' });
       }
 
-      const customer = await stripe.customers.create({
-        email: user.email,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-      });
+      // Create or get customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          metadata: { userId: userId }
+        });
+        customerId = customer.id;
+      }
 
       // Create price for €15/month
       const price = await stripe.prices.create({
@@ -505,22 +515,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: 'eur',
         recurring: { interval: 'month' },
         product_data: {
-          name: 'LeadMirror Premium',
+          name: 'LeadMirror Premium'
         },
       });
 
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{ price: price.id }],
-        payment_behavior: 'default_incomplete',
-        expand: ['latest_invoice.payment_intent'],
+      // Create Checkout Session
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price: price.id,
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get('host')}/profile?success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/profile?canceled=true`,
+        metadata: { userId: userId }
       });
 
-      await storage.updateUserStripeInfo(userId, customer.id, subscription.id);
-
       res.json({
-        subscriptionId: subscription.id,
-        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+        checkoutUrl: session.url,
+        sessionId: session.id
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);

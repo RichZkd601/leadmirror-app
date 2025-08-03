@@ -161,8 +161,27 @@ export default function Profile() {
     updateProfileMutation.mutate(editData);
   };
 
-  const handleSubscribe = () => {
-    window.location.href = "/subscribe";
+  const handleSubscribe = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/create-subscription");
+      const data = await response.json();
+      
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer la session de paiement",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de démarrer l'abonnement",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

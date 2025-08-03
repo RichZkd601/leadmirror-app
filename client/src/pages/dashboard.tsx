@@ -1318,7 +1318,17 @@ Sarah"
                 </ul>
                 <Button 
                   className="w-full"
-                  onClick={() => window.location.href = "/subscribe"}
+                  onClick={async () => {
+                    try {
+                      const response = await apiRequest("POST", "/api/create-subscription");
+                      const data = await response.json();
+                      if (data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
+                      }
+                    } catch (error) {
+                      console.error("Erreur création abonnement:", error);
+                    }
+                  }}
                 >
                   <Crown className="w-4 h-4 mr-2" />
                   Passer au premium
