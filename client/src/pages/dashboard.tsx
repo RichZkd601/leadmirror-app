@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Onboarding from "@/components/onboarding";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -1403,6 +1404,8 @@ Sarah"
           localStorage.setItem('leadmirror-onboarding-seen', 'true');
         }} 
       />
+      
+      <Footer />
     </div>
   );
 }

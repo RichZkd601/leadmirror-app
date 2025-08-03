@@ -19,10 +19,11 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/security" component={Security} />
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
-          <Route component={NotFound} />
+          <Route path="/*" component={NotFound} />
         </>
       ) : (
         <>
@@ -31,9 +32,8 @@ function Router() {
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/integrations" component={Integrations} />
-          <Route path="/security" component={Security} />
           <Route path="/profile" component={Profile} />
-          <Route component={NotFound} />
+          <Route path="/*" component={NotFound} />
         </>
       )}
     </Switch>

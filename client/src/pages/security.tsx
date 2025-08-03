@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Lock, Eye, FileText, Users, Database, CheckCircle } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default function Security() {
   return (
@@ -172,6 +173,8 @@ export default function Security() {
           </Card>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 }

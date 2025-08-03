@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import Footer from "@/components/Footer";
 import { 
   TrendingUp, 
   Target, 
@@ -335,6 +336,8 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </main>
+      
+      <Footer />
     </div>
   );
 }

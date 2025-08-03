@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FlipHorizontal2, Brain, MessageSquare, TrendingUp, CheckCircle, ArrowRight } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default function Landing() {
   return (

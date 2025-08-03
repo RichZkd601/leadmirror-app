@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import Footer from "@/components/Footer";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
@@ -169,6 +170,8 @@ export default function Subscribe() {
           <SubscribeForm />
         </Elements>
       </div>
+      
+      <Footer />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -282,7 +283,7 @@ export default function Integrations() {
 
         <div className="grid gap-6">
           {/* Existing Integrations */}
-          {integrations && integrations.length > 0 && (
+          {Array.isArray(integrations) && integrations.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Intégrations configurées</CardTitle>
@@ -292,7 +293,7 @@ export default function Integrations() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {integrations.map((integration: CrmIntegration) => {
+                  {(integrations as CrmIntegration[]).map((integration: CrmIntegration) => {
                     const config = platformConfig[integration.platform as keyof typeof platformConfig];
                     const IconComponent = config?.icon || Settings;
                     
@@ -459,7 +460,7 @@ export default function Integrations() {
               <div className="grid md:grid-cols-2 gap-4">
                 {Object.entries(platformConfig).map(([key, config]) => {
                   const IconComponent = config.icon;
-                  const isConfigured = integrations?.some((i: CrmIntegration) => i.platform === key);
+                  const isConfigured = Array.isArray(integrations) && integrations.some((i: CrmIntegration) => i.platform === key);
                   
                   return (
                     <div key={key} className="p-4 border rounded-lg">
@@ -490,6 +491,8 @@ export default function Integrations() {
           </Card>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 }
