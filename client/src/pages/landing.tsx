@@ -7,6 +7,13 @@ import Footer from "@/components/Footer";
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
+      {/* Promo Banner */}
+      <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white py-2 px-4 text-center">
+        <p className="text-sm font-medium">
+          🚀 <strong>LANCEMENT EXCLUSIF</strong> • Profitez de 3 analyses GRATUITES + 50% de réduction sur votre premier mois Premium • Offre limitée
+        </p>
+      </div>
+
       {/* Header */}
       <header className="border-b border-border sticky top-0 z-40 bg-background/95 backdrop-blur" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,17 +52,17 @@ export default function Landing() {
             <span className="text-primary block">commerciales avec l'IA</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            <strong>LeadMirror</strong> analyse instantanément vos conversations commerciales avec une IA révolutionnaire. 
-            Profiling psychologique DISC, prédictions d'objections, messages de relance parfaits. 
-            Ne perdez plus jamais une vente à cause d'un mauvais suivi.
+            <strong>LeadMirror</strong> analyse instantanément vos conversations commerciales avec GPT-4o et Whisper AI. 
+            Profiling psychologique DISC, détection d'objections, scoring d'intérêt, messages de relance personnalisés. 
+            <span className="font-semibold text-foreground">Transformez chaque conversation en opportunité fermée.</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
               onClick={() => window.location.href = '/api/login'}
-              className="text-lg px-8 py-3"
+              className="text-lg px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              Essai gratuit
+              3 analyses GRATUITES
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button 
@@ -86,32 +93,41 @@ export default function Landing() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card>
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
               <CardHeader>
-                <Brain className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Analyse du niveau d'intérêt</CardTitle>
+                <div className="flex items-center justify-between mb-4">
+                  <Brain className="w-12 h-12 text-primary" />
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">GPT-4o</Badge>
+                </div>
+                <CardTitle>Scoring d'intérêt IA</CardTitle>
                 <CardDescription>
-                  Comprenez instantanément si votre prospect est chaud, tiède ou froid avec une justification détaillée.
+                  <strong>Analyse psychologique avancée.</strong> Déterminez instantanément si votre prospect est HOT (90%), WARM (60%) ou COLD (20%) avec justification comportementale complète.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
               <CardHeader>
-                <MessageSquare className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Détection des objections</CardTitle>
+                <div className="flex items-center justify-between mb-4">
+                  <MessageSquare className="w-12 h-12 text-primary" />
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">DISC</Badge>
+                </div>
+                <CardTitle>Objections & Profiling</CardTitle>
                 <CardDescription>
-                  Identifiez les objections cachées et les préoccupations avant qu'elles ne deviennent des obstacles.
+                  <strong>Détection prédictive d'objections.</strong> Profil psychologique DISC, signaux d'achat, risques identifiés. Anticipez chaque réaction de votre prospect.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
               <CardHeader>
-                <TrendingUp className="w-12 h-12 text-primary mb-4" />
-                <CardTitle>Suivi stratégique</CardTitle>
+                <div className="flex items-center justify-between mb-4">
+                  <TrendingUp className="w-12 h-12 text-primary" />
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">Conversion</Badge>
+                </div>
+                <CardTitle>Relances personnalisées</CardTitle>
                 <CardDescription>
-                  Obtenez des messages de relance parfaitement adaptés qui répondent aux préoccupations et objections spécifiques.
+                  <strong>Messages de suivi automatisés.</strong> Emails et SMS adaptés au profil psychologique, aux objections détectées et au timing optimal de votre prospect.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -143,15 +159,19 @@ export default function Landing() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>3 analyses par mois</span>
+                    <span><strong>3 analyses complètes</strong> par mois</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Insights IA basiques</span>
+                    <span>Scoring d'intérêt + objections</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Génération de messages de relance</span>
+                    <span>Messages de relance automatisés</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span>Upload audio (Whisper AI)</span>
                   </li>
                 </ul>
                 <Button 
@@ -178,23 +198,27 @@ export default function Landing() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Analyses illimitées</span>
+                    <span><strong>Analyses ILLIMITÉES</strong></span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Insights IA avancés</span>
+                    <span>Profiling psychologique DISC complet</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Historique complet des analyses</span>
+                    <span>Prédictions d'objections avancées</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Suivi des performances</span>
+                    <span>Historique complet + analytics</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Support prioritaire</span>
+                    <span>Transcription audio illimitée</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span>Support prioritaire 24/7</span>
                   </li>
                 </ul>
                 <Button 
@@ -209,24 +233,119 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="py-20 bg-muted/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-bold text-foreground mb-4">
+              Résultats prouvés par nos utilisateurs
+            </h3>
+            <p className="text-lg text-muted-foreground">
+              Découvrez comment LeadMirror transforme les performances commerciales
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="bg-white dark:bg-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <CheckCircle key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  "LeadMirror a révolutionné ma façon de faire du commerce. Le profiling psychologique est bluffant de précision. +40% de conversions en 2 mois."
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-medium">MR</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Marc Rousseau</p>
+                    <p className="text-xs text-muted-foreground">Directeur Commercial, TechFlow</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <CheckCircle key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  "Les messages de relance générés par l'IA sont parfaits. Je gagne 3h par jour et mes prospects répondent 60% plus souvent. Révolutionnaire !"
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-medium">SL</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Sophie Laurent</p>
+                    <p className="text-xs text-muted-foreground">Account Manager, DataSolutions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-card">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <CheckCircle key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  "Incroyable precision dans l'analyse des objections. J'anticipe maintenant chaque réaction de mes prospects. ROI immédiat sur mon équipe de 12 commerciaux."
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-medium">JD</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Jean Dupont</p>
+                    <p className="text-xs text-muted-foreground">VP Sales, InnovCorp</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20 bg-primary">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h3 className="text-3xl font-bold text-primary-foreground mb-4">
-            Prêt à transformer votre processus de vente ?
+          <h3 className="text-3xl font-bold text-white mb-4">
+            Prêt à multiplier vos conversions ?
           </h3>
-          <p className="text-xl text-primary-foreground/80 mb-8">
-            Rejoignez des milliers de commerciaux qui concluent déjà plus de ventes avec LeadMirror.
+          <p className="text-xl text-white/90 mb-8">
+            Rejoignez +5,000 commerciaux qui ferment déjà plus de deals avec LeadMirror
           </p>
-          <Button 
-            size="lg" 
-            variant="secondary"
-            onClick={() => window.location.href = '/api/login'}
-            className="text-lg px-8 py-3"
-          >
-            Commencez votre essai gratuit dès maintenant
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              variant="secondary"
+              onClick={() => window.location.href = '/api/login'}
+              className="text-lg px-8 py-3 bg-white text-primary hover:bg-gray-100"
+            >
+              Commencer mes 3 analyses gratuites
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => window.location.href = '/api/login'}
+              className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-primary"
+            >
+              Voir la démo live
+            </Button>
+          </div>
+          <p className="text-sm text-white/70 mt-4">
+            Aucune carte de crédit nécessaire • Résultats garantis en 48h • Satisfait ou remboursé
+          </p>
         </div>
       </section>
 

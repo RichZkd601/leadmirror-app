@@ -143,25 +143,7 @@ export default function Dashboard() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
   const [analysisTitle, setAnalysisTitle] = useState("");
-  const [conversationText, setConversationText] = useState(`Bonjour Monsieur Dupont, merci de prendre le temps de me parler aujourd'hui. Je vous appelle suite à votre demande d'information sur nos solutions de gestion commerciale.
-
-Client: Oui bonjour, effectivement j'ai vu votre présentation en ligne et ça m'a l'air intéressant. Par contre, je ne suis pas sûr que ce soit le bon moment pour investir.
-
-Vendeur: Je comprends parfaitement votre préoccupation. Pouvez-vous me dire quels sont vos principaux défis actuels en matière de gestion commerciale ?
-
-Client: Eh bien, on perd beaucoup de temps avec notre système actuel. Mes équipes passent des heures à saisir des données et on n'a pas de vision claire sur nos performances. Mais avec la conjoncture économique...
-
-Vendeur: C'est exactement le type de problème que notre solution résout. Combien d'heures par semaine vos équipes perdent-elles actuellement ?
-
-Client: Facilement 10 heures par semaine, peut-être plus. C'est énorme quand on y pense.
-
-Vendeur: Absolument ! Si on valorise ces 10 heures à 50€ de l'heure, ça représente 500€ par semaine, soit 26 000€ par an. Notre solution coûte 8 000€ et vous ferait économiser plus de 15 000€ dès la première année.
-
-Client: Wow, vu comme ça... Mais il faut quand même l'investissement initial. Et si ça ne marche pas comme prévu ?
-
-Vendeur: Je comprends cette inquiétude. C'est pourquoi nous proposons une garantie satisfait ou remboursé de 30 jours. De plus, nous avons des témoignages clients qui montrent des résultats similaires.
-
-Client: Intéressant... Vous pouvez me montrer ces témoignages ?`);
+  const [conversationText, setConversationText] = useState(``);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
@@ -1105,10 +1087,13 @@ Sarah"
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Usage Stats */}
-            <Card>
+            <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-2">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Mes analyses</span>
+                  <span className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5" />
+                    <span>Vos analyses</span>
+                  </span>
                   {user?.isPremium && (
                     <Button 
                       variant="ghost" 
@@ -1117,31 +1102,51 @@ Sarah"
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <History className="w-4 h-4 mr-1" />
-                      Analyses sauvegardées
+                      Historique
                     </Button>
                   )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Analyses mensuelles</span>
-                    <span className="font-medium">
-                      {user.monthlyAnalysesUsed || 0}{!user.isPremium && "/3"}
-                    </span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Analyses mensuelles</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {user.isPremium ? "∞ ILLIMITÉES" : `${user.monthlyAnalysesUsed || 0}/3`}
+                    </p>
                   </div>
-                  {!user.isPremium && (
-                    <Progress value={usagePercentage} className="h-2" />
+                  {user.isPremium ? (
+                    <Badge className="bg-green-500 text-white pulse">
+                      🔥 PREMIUM
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-700">
+                      Gratuit
+                    </Badge>
                   )}
                 </div>
                 {!user.isPremium && (
-                  <Button 
-                    className="w-full bg-accent hover:bg-accent/90"
-                    onClick={() => setShowPricing(true)}
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    Passer au Premium
-                  </Button>
+                  <>
+                    <Progress value={usagePercentage} className="h-3" />
+                    <div className="bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-950 dark:to-orange-950 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                        🚀 Débloquez le plein potentiel
+                      </p>
+                      <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 mb-3">
+                        <li>• Analyses ILLIMITÉES</li>
+                        <li>• Profiling DISC complet</li>
+                        <li>• Prédictions d'objections avancées</li>
+                        <li>• Historique complet + analytics</li>
+                      </ul>
+                      <Button 
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                        onClick={() => setShowPricing(true)}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Passer au Premium - €15/mois
+                      </Button>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
