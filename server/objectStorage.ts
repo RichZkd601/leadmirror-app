@@ -172,10 +172,11 @@ export class ObjectStorageService {
 
   // Downloads an audio file to a local temporary path for processing
   async downloadAudioToTemp(audioFile: File): Promise<string> {
+    const fs = require('fs');
     const tempPath = `/tmp/audio_${randomUUID()}.tmp`;
     
     return new Promise((resolve, reject) => {
-      const writeStream = require('fs').createWriteStream(tempPath);
+      const writeStream = fs.createWriteStream(tempPath);
       const readStream = audioFile.createReadStream();
       
       readStream.on('error', reject);

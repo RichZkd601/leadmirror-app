@@ -31,6 +31,7 @@ export default function AudioAnalysis() {
   const [audioMetadata, setAudioMetadata] = useState<AudioMetadata | null>(null);
   const [analysisTitle, setAnalysisTitle] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<Analysis & { audioInsights?: any } | null>(null);
 
   // Redirect to login if not authenticated
@@ -79,12 +80,58 @@ export default function AudioAnalysis() {
     },
   });
 
-  const handleTranscriptionComplete = (
-    transcriptionText: string,
-    metadata: AudioMetadata
-  ) => {
-    setTranscription(transcriptionText);
-    setAudioMetadata(metadata);
+  // Transcription mutation
+  const transcribeMutation = useMutation({
+    mutationFn: async (data: {
+      audioURL: string;
+      fileName: string;
+      fileSize: number;
+    }) => {
+      const response = await apiRequest("POST", "/api/audio/transcribe", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setTranscription(data.transcription);
+      setAudioMetadata({
+        duration: data.duration,
+        fileSize: data.fileSize || 0,
+        fileName: data.fileName,
+        audioPath: data.audioPath,
+      });
+      setIsTranscribing(false);
+      toast({
+        title: "Transcription terminée",
+        description: "Votre fichier audio a été transcrit avec succès.",
+      });
+    },
+    onError: (error) => {
+      setIsTranscribing(false);
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Non autorisé",
+          description: "Vous êtes déconnecté. Reconnexion en cours...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Erreur de transcription",
+        description: error.message || "Impossible de transcrire le fichier audio.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAudioUploadComplete = (audioUrl: string, fileName: string, fileSize: number) => {
+    setIsTranscribing(true);
+    transcribeMutation.mutate({
+      audioURL: audioUrl,
+      fileName: fileName,
+      fileSize: fileSize,
+    });
   };
 
   const handleAnalyze = () => {
@@ -196,58 +243,29 @@ export default function AudioAnalysis() {
                 Uploadez un enregistrement d'appel commercial pour transcription et analyse IA
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <AudioUploader
-                onGetUploadParameters={async () => {
-                  const response = await apiRequest("POST", "/api/audio/upload");
-                  const data = await response.json();
-                  return {
-                    method: "PUT" as const,
-                    url: data.uploadURL,
-                  };
-                }}
-                onComplete={async (result) => {
-                  if (result.successful && result.successful.length > 0) {
-                    const file = result.successful[0];
-                    const uploadURL = file.uploadURL;
-                    
-                    try {
-                      // Start transcription
-                      const transcriptionResponse = await apiRequest("POST", "/api/audio/transcribe", {
-                        audioURL: uploadURL,
-                        fileName: file.name,
-                        fileSize: file.size,
-                        duration: 0 // Will be calculated by server
-                      });
-                      
-                      const transcriptionData = await transcriptionResponse.json();
-                      
-                      handleTranscriptionComplete(transcriptionData.transcription, {
-                        duration: transcriptionData.duration || 0,
-                        fileSize: file.size || 0,
-                        fileName: file.name || "audio.wav",
-                        audioPath: transcriptionData.audioPath || ""
-                      });
-                      
-                      toast({
-                        title: "Transcription réussie",
-                        description: "Le fichier audio a été transcrit avec succès. Vous pouvez maintenant lancer l'analyse.",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Erreur de transcription",
-                        description: "Impossible de transcrire le fichier audio.",
-                        variant: "destructive",
-                      });
-                    }
-                  }
-                }}
+                onComplete={handleAudioUploadComplete}
+                disabled={isTranscribing || isAnalyzing}
               >
                 <div className="flex items-center space-x-2">
                   <FileAudio className="w-4 h-4" />
-                  <span>Sélectionner fichier audio</span>
+                  <span>
+                    {isTranscribing ? "Transcription en cours..." : "Sélectionner fichier audio"}
+                  </span>
                 </div>
               </AudioUploader>
+
+              {isTranscribing && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Mic className="w-4 h-4 text-blue-600 animate-pulse" />
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Transcription avec Whisper AI en cours...
+                    </span>
+                  </div>
+                </div>
+              )}
               
               <div className="mt-4 text-sm text-muted-foreground">
                 <p>Formats supportés: MP3, WAV, M4A, AAC, FLAC, OGG</p>
@@ -306,7 +324,7 @@ export default function AudioAnalysis() {
 
                 <Button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || !transcription || (user && !user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3)}
+                  disabled={isAnalyzing || isTranscribing || !transcription || (user && !user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3)}
                   className="w-full"
                   size="lg"
                 >

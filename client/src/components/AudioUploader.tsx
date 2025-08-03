@@ -7,19 +7,15 @@ import "@uppy/dashboard/dist/style.min.css";
 import AwsS3 from "@uppy/aws-s3";
 import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AudioUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
-  onGetUploadParameters: () => Promise<{
-    method: "PUT";
-    url: string;
-  }>;
-  onComplete?: (
-    result: UploadResult<Record<string, unknown>, Record<string, unknown>>
-  ) => void;
+  onComplete?: (audioUrl: string, fileName: string, fileSize: number) => void;
   buttonClassName?: string;
   children: ReactNode;
+  disabled?: boolean;
 }
 
 /**
@@ -41,21 +37,18 @@ interface AudioUploaderProps {
  * @param props.maxNumberOfFiles - Maximum number of files allowed to be uploaded
  *   (default: 1)
  * @param props.maxFileSize - Maximum file size in bytes (default: 50MB for audio)
- * @param props.onGetUploadParameters - Function to get upload parameters (method and URL).
- *   Typically used to fetch a presigned URL from the backend server for direct-to-storage
- *   uploads.
- * @param props.onComplete - Callback function called when upload is complete. Typically
- *   used to make post-upload API calls to update server state and trigger transcription.
+ * @param props.onComplete - Callback function called when upload is complete with audio URL,
+ *   file name, and file size. Used to trigger transcription.
  * @param props.buttonClassName - Optional CSS class name for the button
  * @param props.children - Content to be rendered inside the button
  */
 export function AudioUploader({
   maxNumberOfFiles = 1,
   maxFileSize = 52428800, // 50MB default for audio files
-  onGetUploadParameters,
   onComplete,
   buttonClassName,
   children,
+  disabled = false,
 }: AudioUploaderProps) {
   const [showModal, setShowModal] = useState(false);
   const [uppy] = useState(() =>
@@ -69,17 +62,31 @@ export function AudioUploader({
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
-        getUploadParameters: onGetUploadParameters,
+        getUploadParameters: async () => {
+          const response = await apiRequest("POST", "/api/audio/upload");
+          const data = await response.json();
+          return {
+            method: "PUT" as const,
+            url: data.uploadURL,
+          };
+        },
       })
       .on("complete", (result) => {
-        onComplete?.(result);
+        if (result.successful && result.successful.length > 0) {
+          const file = result.successful[0];
+          onComplete?.(file.uploadURL || "", file.name || "", file.size || 0);
+        }
         setShowModal(false);
       })
   );
 
   return (
     <div>
-      <Button onClick={() => setShowModal(true)} className={buttonClassName}>
+      <Button 
+        onClick={() => setShowModal(true)} 
+        className={buttonClassName}
+        disabled={disabled}
+      >
         {children}
       </Button>
 
