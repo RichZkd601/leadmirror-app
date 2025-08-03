@@ -95,14 +95,13 @@ export default function Analytics() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Score moyen</p>
-                  <p className="text-3xl font-bold">{analyticsData.avgConfidenceScore}%</p>
+                  <p className="text-sm text-muted-foreground">Profil dominant</p>
+                  <p className="text-2xl font-bold">Analytique</p>
                 </div>
-                <Target className="w-8 h-8 text-green-600" />
+                <Brain className="w-8 h-8 text-green-600" />
               </div>
               <div className="flex items-center mt-2">
-                <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                <span className="text-sm text-green-600">+{analyticsData.improvementRate}% d'amélioration</span>
+                <span className="text-sm text-green-600">Approche méthodique efficace</span>
               </div>
             </CardContent>
           </Card>
@@ -126,62 +125,122 @@ export default function Analytics() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Taux de closing</p>
-                  <p className="text-3xl font-bold">{analyticsData.successRate}%</p>
+                  <p className="text-sm text-muted-foreground">Adaptation style</p>
+                  <p className="text-2xl font-bold">Excellent</p>
                 </div>
                 <Award className="w-8 h-8 text-purple-600" />
               </div>
               <div className="flex items-center mt-2">
                 <ArrowUp className="w-4 h-4 text-green-600 mr-1" />
-                <span className="text-sm text-green-600">Au-dessus de la moyenne</span>
+                <span className="text-sm text-green-600">Flexibilité reconnue</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Performance Trends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="w-5 h-5" />
-                <span>Tendances de performance</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {analyticsData.recentTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded">
-                    <span className="font-medium">{trend.metric}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-green-600 font-bold">{trend.value}</span>
-                      <ArrowUp className="w-4 h-4 text-green-600" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skills Assessment */}
+          {/* Profil Psychologique */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Brain className="w-5 h-5" />
-                <span>Évaluation des compétences</span>
+                <span>Profil Psychologique DISC</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {analyticsData.skillLevels.map((skill, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium">{skill.skill}</span>
-                      <span className="text-sm font-bold">{skill.level}%</span>
-                    </div>
-                    <Progress value={skill.level} className="h-2" />
+                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-200">Dominance (D)</h4>
+                    <span className="text-blue-600 font-bold">25%</span>
                   </div>
-                ))}
+                  <Progress value={25} className="h-2" />
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Approche collaborative</p>
+                </div>
+                
+                <div className="p-4 bg-green-50 dark:bg-green-950 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-green-800 dark:text-green-200">Influence (I)</h4>
+                    <span className="text-green-600 font-bold">60%</span>
+                  </div>
+                  <Progress value={60} className="h-2" />
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">Communicateur naturel</p>
+                </div>
+                
+                <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-purple-800 dark:text-purple-200">Stabilité (S)</h4>
+                    <span className="text-purple-600 font-bold">45%</span>
+                  </div>
+                  <Progress value={45} className="h-2" />
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">Relation de confiance</p>
+                </div>
+                
+                <div className="p-4 bg-orange-50 dark:bg-orange-950 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-orange-800 dark:text-orange-200">Conformité (C)</h4>
+                    <span className="text-orange-600 font-bold">70%</span>
+                  </div>
+                  <Progress value={70} className="h-2" />
+                  <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">Analyse détaillée forte</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Adaptation Comportementale */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Users className="w-5 h-5" />
+                <span>Adaptation aux Tempéraments</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-muted rounded">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="font-medium">Prospects Dominants</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">85%</div>
+                    <div className="text-xs text-muted-foreground">Adaptation réussie</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted rounded">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span className="font-medium">Prospects Influents</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">92%</div>
+                    <div className="text-xs text-muted-foreground">Connexion naturelle</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted rounded">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="font-medium">Prospects Stables</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">78%</div>
+                    <div className="text-xs text-muted-foreground">Confiance progressive</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-muted rounded">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="font-medium">Prospects Analytiques</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">95%</div>
+                    <div className="text-xs text-muted-foreground">Affinité naturelle</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -235,33 +294,42 @@ export default function Analytics() {
           </Card>
         </div>
 
-        {/* Insights & Recommendations */}
+        {/* Insights & Recommendations basés sur le tempérament */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Insights & Recommandations IA</CardTitle>
+            <CardTitle>Recommandations Personnalisées IA</CardTitle>
+            <CardDescription>Basées sur votre profil psychologique Analytique-Influent</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded">
-              <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">📈 Optimisation suggérée</h4>
+              <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">🧠 Exploitez votre profil Analytique</h4>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Vos conversations avec approche consultative ont un taux de conversion 32% plus élevé. 
-                Concentrez-vous sur cette méthode pour les prospects en phase de découverte.
+                Votre forte tendance analytique (70%) vous permet d'exceller avec les prospects qui demandent des détails. 
+                Préparez des études de cas et des données concrètes pour maximiser votre impact avec ce type de profil.
               </p>
             </div>
             
             <div className="p-4 bg-green-50 dark:bg-green-950 rounded">
-              <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">🎯 Point fort identifié</h4>
+              <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">💬 Développez votre dimension Influence</h4>
               <p className="text-sm text-green-700 dark:text-green-300">
-                Votre capacité à identifier et traiter les objections s'est améliorée de 23% ce mois-ci. 
-                Continuez à utiliser la technique de reformulation empathique.
+                Votre score Influence (60%) est votre second atout. Travaillez sur le storytelling et les témoignages 
+                émotionnels pour créer des connexions plus fortes avec les prospects Influents et Stables.
+              </p>
+            </div>
+            
+            <div className="p-4 bg-orange-50 dark:bg-orange-950 rounded">
+              <h4 className="font-medium text-orange-800 dark:text-orange-200 mb-2">⚡ Adaptez-vous aux profils Dominants</h4>
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Avec les prospects Dominants (85% d'adaptation), raccourcissez vos présentations et allez droit au but. 
+                Présentez les bénéfices business immédiats dès les premières minutes.
               </p>
             </div>
             
             <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded">
-              <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">🚀 Prochaine étape</h4>
+              <h4 className="font-medium text-purple-800 dark:text-purple-200 mb-2">🔄 Zone d'amélioration : Prospects Stables</h4>
               <p className="text-sm text-purple-700 dark:text-purple-300">
-                Pour atteindre 80% de taux de conversion, travaillez sur la création d'urgence naturelle 
-                et l'amélioration de vos questions de qualification.
+                Votre adaptation avec les profils Stables (78%) peut s'améliorer. Ralentissez le rythme, 
+                construisez la confiance progressivement et évitez la pression commerciale directe.
               </p>
             </div>
           </CardContent>
