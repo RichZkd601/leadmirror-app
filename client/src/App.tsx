@@ -20,7 +20,10 @@ function Router() {
   return (
     <Switch>
       {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route component={NotFound} />
+        </>
       ) : (
         <>
           <Route path="/" component={Dashboard} />
@@ -30,9 +33,9 @@ function Router() {
           <Route path="/integrations" component={Integrations} />
           <Route path="/security" component={Security} />
           <Route path="/profile" component={Profile} />
+          <Route component={NotFound} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
