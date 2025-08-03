@@ -502,14 +502,12 @@ export default function AudioAnalysis() {
 
           {/* Bottom bar */}
           <div className="border-t border-border pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <div className="text-sm text-muted-foreground">
-                © 2025 LeadMirror. Tous droits réservés. | Fait avec ❤️ pour les commerciaux français
+            <div className="text-center space-y-3">
+              <div className="text-sm font-medium text-foreground">
+                LeadMirror © 2025 — Tous droits réservés
               </div>
-              <div className="flex space-x-6 text-sm text-muted-foreground">
-                <span>🇫🇷 Interface française</span>
-                <span>🔒 Conforme RGPD</span>
-                <span>⚡ IA GPT-4o + Whisper</span>
+              <div className="text-sm text-muted-foreground">
+                Solution conçue pour les professionnels de la vente | IA de nouvelle génération (GPT-4o + Whisper) | Respect des normes RGPD
               </div>
             </div>
           </div>
