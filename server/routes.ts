@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/logout', (req, res) => {
     (req as any).session.destroy(() => {
       res.clearCookie('connect.sid');
-      res.redirect('/');
+      res.json({ message: "Déconnexion réussie" });
     });
   });
 

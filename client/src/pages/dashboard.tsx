@@ -146,8 +146,32 @@ export default function Dashboard() {
   const [conversationText, setConversationText] = useState(``);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
+  const [showPricing, setShowPricing] = useState(false); 
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/auth/logout"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Déconnexion réussie", 
+        description: "Vous avez été déconnecté avec succès",
+      });
+      // Redirection vers la page d'accueil après déconnexion
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    },
+    onError: (error) => {
+      console.error("Logout error:", error);
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la déconnexion",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -158,7 +182,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/auth/google";
+        window.location.href = "/auth";
       }, 500);
       return;
     }
@@ -396,7 +420,7 @@ export default function Dashboard() {
                         <DropdownMenuSeparator />
                       </>
                     )}
-                    <DropdownMenuItem onClick={() => window.location.href = "/api/auth/logout"}>
+                    <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                       <ArrowRight className="mr-2 h-4 w-4" />
                       <span>Se déconnecter</span>
                     </DropdownMenuItem>
