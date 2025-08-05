@@ -8,13 +8,24 @@ import { storage } from "./storage";
 export function getSession() {
   const defaultSessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const extendedSessionTtl = 30 * 24 * 60 * 60 * 1000; // 30 days
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: extendedSessionTtl, // Use extended TTL for store
-    tableName: "sessions",
-  });
+  
+  // Try to use PostgreSQL store, fallback to memory store if DB is not available
+  let sessionStore;
+  try {
+    const pgStore = connectPg(session);
+    sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: false,
+      ttl: extendedSessionTtl, // Use extended TTL for store
+      tableName: "sessions",
+    });
+  } catch (error) {
+    console.log('⚠️ PostgreSQL session store not available, using memory store');
+    console.log('Database error:', error);
+    // Fallback to memory store
+    sessionStore = undefined;
+  }
+  
   return session({
     secret: process.env.SESSION_SECRET || "fallback-secret-for-dev",
     store: sessionStore,

@@ -33,12 +33,12 @@ function checkHealth() {
         try {
           const response = JSON.parse(data);
           
-          if (res.statusCode === 200 && response.status === 'healthy') {
+          if (res.statusCode === 200) {
             console.log('✅ Health check réussi');
-            console.log(`📊 Status: ${response.status}`);
-            console.log(`🌍 Environnement: ${response.environment}`);
-            console.log(`🔌 Port: ${response.port}`);
-            console.log(`🗄️  Base de données: ${response.database}`);
+            console.log(`📊 Status: ${response.status || 'ok'}`);
+            console.log(`🌍 Environnement: ${response.environment || 'unknown'}`);
+            console.log(`🔌 Port: ${response.port || PORT}`);
+            console.log(`🗄️  Base de données: ${response.database || 'unknown'}`);
             resolve(true);
           } else {
             console.log('❌ Health check échoué');

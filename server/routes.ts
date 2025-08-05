@@ -39,10 +39,7 @@ const validateRequired = (fields: string[]) => (req: any, res: any, next: any) =
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Simple auth system with email/password
-  app.use(getSession());
-
-  // Health check route for Railway
+  // Health check routes - MUST BE BEFORE SESSION MIDDLEWARE
   app.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
@@ -51,17 +48,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // API health check route for Railway
   app.get('/api/health', (req, res) => {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      message: 'API is running'
+      message: 'API is running',
+      port: process.env.PORT || 5000
     });
   });
 
-  // Root route for Railway healthcheck
   app.get('/', (req, res) => {
     res.json({ 
       message: 'LeadMirror API is running',
@@ -69,6 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString()
     });
   });
+
+  // Simple auth system with email/password - AFTER HEALTH CHECK ROUTES
+  app.use(getSession());
 
   // Simple authentication middleware
   const isAuthenticated = (req: any, res: any, next: any) => {
