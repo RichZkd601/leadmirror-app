@@ -1,14 +1,268 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
 var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
   get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
 }) : x)(function(x) {
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+
+// server/audioProcessor.ts
+var audioProcessor_exports = {};
+__export(audioProcessor_exports, {
+  AdvancedAudioProcessor: () => AdvancedAudioProcessor
+});
+import fs from "fs";
+import path from "path";
+import { createHash } from "crypto";
+import { promisify } from "util";
+import { exec } from "child_process";
+var execAsync, AdvancedAudioProcessor;
+var init_audioProcessor = __esm({
+  "server/audioProcessor.ts"() {
+    "use strict";
+    execAsync = promisify(exec);
+    AdvancedAudioProcessor = class {
+      static SUPPORTED_FORMATS = [
+        ".mp3",
+        ".mp4",
+        ".mpeg",
+        ".mpga",
+        ".m4a",
+        ".wav",
+        ".webm",
+        ".flac",
+        ".ogg",
+        ".opus",
+        ".aac"
+      ];
+      static MAX_FILE_SIZE = 25 * 1024 * 1024;
+      // 25MB (Whisper limit)
+      static MIN_FILE_SIZE = 1024;
+      // 1KB minimum
+      static OPTIMAL_SAMPLE_RATE = 16e3;
+      // 16kHz optimal for Whisper
+      static TEMP_DIR = "/tmp/leadmirror-audio";
+      static async initialize() {
+        if (!fs.existsSync(this.TEMP_DIR)) {
+          fs.mkdirSync(this.TEMP_DIR, { recursive: true });
+        }
+      }
+      // Enhanced audio validation with detailed feedback
+      static validateAudioFile(filePath) {
+        const issues = [];
+        if (!fs.existsSync(filePath)) {
+          return {
+            isValid: false,
+            issues: ["Fichier audio introuvable"],
+            metadata: { size: 0, format: "", hash: "" }
+          };
+        }
+        const stats = fs.statSync(filePath);
+        const fileSize = stats.size;
+        const fileExt = path.extname(filePath).toLowerCase();
+        const fileHash = this.generateFileHash(filePath);
+        if (fileSize < this.MIN_FILE_SIZE) {
+          issues.push(`Fichier trop petit (minimum ${this.MIN_FILE_SIZE} bytes)`);
+        }
+        if (fileSize > this.MAX_FILE_SIZE) {
+          issues.push(`Fichier trop volumineux (maximum ${Math.round(this.MAX_FILE_SIZE / 1024 / 1024)}MB, re\xE7u ${Math.round(fileSize / 1024 / 1024)}MB)`);
+        }
+        if (!this.SUPPORTED_FORMATS.includes(fileExt)) {
+          issues.push(`Format non support\xE9: ${fileExt}. Formats accept\xE9s: ${this.SUPPORTED_FORMATS.join(", ")}`);
+        }
+        return {
+          isValid: issues.length === 0,
+          issues,
+          metadata: {
+            size: fileSize,
+            format: fileExt,
+            hash: fileHash
+          }
+        };
+      }
+      // Pre-process audio for optimal transcription
+      static async optimizeAudioForTranscription(inputPath) {
+        await this.initialize();
+        const originalStats = fs.statSync(inputPath);
+        const originalSize = originalStats.size;
+        const inputHash = this.generateFileHash(inputPath);
+        const outputPath = path.join(this.TEMP_DIR, `optimized_${inputHash.substring(0, 8)}.wav`);
+        const optimizations = [];
+        try {
+          try {
+            await execAsync("which ffmpeg");
+            const ffmpegCommand = [
+              "ffmpeg",
+              "-i",
+              `"${inputPath}"`,
+              "-ar",
+              this.OPTIMAL_SAMPLE_RATE.toString(),
+              // Resample to 16kHz
+              "-ac",
+              "1",
+              // Convert to mono
+              "-c:a",
+              "pcm_s16le",
+              // Uncompressed PCM for best quality
+              "-y",
+              // Overwrite output
+              `"${outputPath}"`
+            ].join(" ");
+            console.log(`\u{1F527} Optimisation audio avec FFmpeg: ${ffmpegCommand}`);
+            await execAsync(ffmpegCommand);
+            optimizations.push("R\xE9\xE9chantillonnage \xE0 16kHz");
+            optimizations.push("Conversion en mono");
+            optimizations.push("Format PCM non compress\xE9");
+          } catch (ffmpegError) {
+            console.log("\u{1F4DD} FFmpeg non disponible, utilisation du fichier original");
+            fs.copyFileSync(inputPath, outputPath);
+            optimizations.push("Fichier original utilis\xE9 (FFmpeg non disponible)");
+          }
+          const optimizedStats = fs.statSync(outputPath);
+          const optimizedSize = optimizedStats.size;
+          console.log(`\u2705 Optimisation termin\xE9e:`);
+          console.log(`   Taille originale: ${Math.round(originalSize / 1024)}KB`);
+          console.log(`   Taille optimis\xE9e: ${Math.round(optimizedSize / 1024)}KB`);
+          console.log(`   Optimisations: ${optimizations.join(", ")}`);
+          return {
+            optimizedPath: outputPath,
+            optimizations,
+            originalSize,
+            optimizedSize
+          };
+        } catch (error) {
+          console.error("\u274C Erreur optimisation audio:", error);
+          fs.copyFileSync(inputPath, outputPath);
+          return {
+            optimizedPath: outputPath,
+            optimizations: ["Erreur optimisation - fichier original utilis\xE9"],
+            originalSize,
+            optimizedSize: originalSize
+          };
+        }
+      }
+      // Extract detailed audio metadata
+      static async extractAudioMetadata(filePath) {
+        try {
+          const ffprobeCommand = [
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+            `"${filePath}"`
+          ].join(" ");
+          const { stdout } = await execAsync(ffprobeCommand);
+          const metadata = JSON.parse(stdout);
+          const audioStream = metadata.streams.find((s) => s.codec_type === "audio") || {};
+          const format = metadata.format || {};
+          return {
+            duration: parseFloat(format.duration) || 0,
+            sampleRate: parseInt(audioStream.sample_rate) || 0,
+            channels: parseInt(audioStream.channels) || 0,
+            bitrate: parseInt(format.bit_rate) || 0,
+            format: format.format_name || "unknown",
+            codec: audioStream.codec_name || "unknown"
+          };
+        } catch (error) {
+          console.log("\u{1F4DD} FFprobe non disponible, estimation basique des m\xE9tadonn\xE9es");
+          const stats = fs.statSync(filePath);
+          const fileSize = stats.size;
+          const estimatedDuration = fileSize / (128 * 1024 / 8);
+          return {
+            duration: estimatedDuration,
+            sampleRate: 44100,
+            // Common default
+            channels: 2,
+            // Stereo default
+            bitrate: 128e3,
+            // 128kbps default
+            format: path.extname(filePath).substring(1),
+            codec: "unknown"
+          };
+        }
+      }
+      static generateFileHash(filePath) {
+        const fileBuffer = fs.readFileSync(filePath);
+        return createHash("sha256").update(fileBuffer).digest("hex");
+      }
+      // Cleanup temporary files
+      static cleanup() {
+        try {
+          if (fs.existsSync(this.TEMP_DIR)) {
+            const files = fs.readdirSync(this.TEMP_DIR);
+            for (const file of files) {
+              const filePath = path.join(this.TEMP_DIR, file);
+              const stats = fs.statSync(filePath);
+              if (Date.now() - stats.mtime.getTime() > 60 * 60 * 1e3) {
+                fs.unlinkSync(filePath);
+                console.log(`\u{1F5D1}\uFE0F Fichier temporaire supprim\xE9: ${file}`);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("\u26A0\uFE0F Erreur nettoyage fichiers temporaires:", error);
+        }
+      }
+      // Audio quality assessment
+      static assessAudioQuality(metadata) {
+        const issues = [];
+        const recommendations = [];
+        let score = 1;
+        if (metadata.duration < 10) {
+          issues.push("Audio tr\xE8s court (< 10 secondes)");
+          score -= 0.2;
+        } else if (metadata.duration > 3600) {
+          issues.push("Audio tr\xE8s long (> 1 heure)");
+          recommendations.push("Divisez les longs enregistrements en segments");
+          score -= 0.1;
+        }
+        if (metadata.sampleRate < 16e3) {
+          issues.push("Taux d'\xE9chantillonnage faible (< 16kHz)");
+          recommendations.push("Utilisez un taux d'\xE9chantillonnage d'au moins 16kHz");
+          score -= 0.3;
+        } else if (metadata.sampleRate > 48e3) {
+          recommendations.push("Taux d'\xE9chantillonnage \xE9lev\xE9 - 16-44kHz suffisant");
+        }
+        if (metadata.bitrate < 64e3) {
+          issues.push("D\xE9bit faible (< 64kbps)");
+          recommendations.push("Utilisez un d\xE9bit d'au moins 128kbps pour une meilleure qualit\xE9");
+          score -= 0.2;
+        }
+        const lossyFormats = [".mp3", ".aac", ".ogg"];
+        if (lossyFormats.includes(metadata.format)) {
+          recommendations.push("Pr\xE9f\xE9rez les formats sans perte (WAV, FLAC) pour une qualit\xE9 optimale");
+        }
+        return {
+          score: Math.max(0, score),
+          issues,
+          recommendations
+        };
+      }
+    };
+    process.on("exit", () => {
+      AdvancedAudioProcessor.cleanup();
+    });
+    process.on("SIGINT", () => {
+      AdvancedAudioProcessor.cleanup();
+      process.exit();
+    });
+    process.on("SIGTERM", () => {
+      AdvancedAudioProcessor.cleanup();
+      process.exit();
+    });
+  }
+});
 
 // server/index.ts
 import express2 from "express";
@@ -22,7 +276,6 @@ var schema_exports = {};
 __export(schema_exports, {
   analyses: () => analyses,
   analysesRelations: () => analysesRelations,
-  crmIntegrations: () => crmIntegrations,
   insertAnalysisSchema: () => insertAnalysisSchema,
   insertUserMetricsSchema: () => insertUserMetricsSchema,
   insertUserSchema: () => insertUserSchema,
@@ -58,8 +311,8 @@ var sessions = pgTable(
 var users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
-  password: varchar("password"),
-  // Added for email/password auth
+  password: varchar("password_hash"),
+  // Match existing database column
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -78,7 +331,7 @@ var analyses = pgTable("analyses", {
   title: varchar("title").notNull().default("Analyse sans titre"),
   inputText: text("input_text").notNull(),
   // Audio analysis fields
-  audioFilePath: varchar("audio_file_path"),
+  audioFilePath: varchar("audio_file_path").notNull().default(""),
   // Path to uploaded audio file
   transcriptionText: text("transcription_text"),
   // Whisper transcription result
@@ -114,17 +367,6 @@ var analyses = pgTable("analyses", {
   advancedInsights: jsonb("advanced_insights"),
   emotionalAnalysis: jsonb("emotional_analysis"),
   createdAt: timestamp("created_at").defaultNow()
-});
-var crmIntegrations = pgTable("crm_integrations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
-  platform: varchar("platform").notNull(),
-  // 'notion', 'pipedrive', 'clickup', 'trello'
-  isActive: boolean("is_active").default(true),
-  config: jsonb("config").notNull(),
-  // Configuration spécifique à chaque plateforme
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
 });
 var insertAnalysisSchema = createInsertSchema(analyses).omit({
   id: true,
@@ -195,23 +437,50 @@ if (!process.env.DATABASE_URL) {
 var pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
+  // Reduced for Railway to avoid connection limits
+  min: 1,
+  // Keep minimum connections ready
   idleTimeoutMillis: 3e4,
-  connectionTimeoutMillis: 5e3
+  // Reduced for Railway
+  connectionTimeoutMillis: 1e4,
+  // Reduced timeout for acquiring connections
+  // createRetryIntervalMillis: 100, // Retry connection creation quickly
+  // Railway specific optimizations
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
 });
 var db = drizzle({ client: pool, schema: schema_exports });
+pool.on("error", (err) => {
+  console.error("Database pool error:", err);
+});
+pool.on("connect", (client) => {
+  console.log("New database connection established");
+});
+pool.on("remove", (client) => {
+  console.log("Database connection removed from pool");
+});
 process.on("SIGINT", async () => {
-  console.log("Closing database pool...");
-  await pool.end();
+  console.log("\u{1F504} Fermeture gracieuse du pool de base de donn\xE9es...");
+  try {
+    await pool.end();
+    console.log("\u2705 Pool de base de donn\xE9es ferm\xE9 avec succ\xE8s");
+  } catch (error) {
+    console.error("\u274C Erreur lors de la fermeture du pool:", error);
+  }
   process.exit(0);
 });
 process.on("SIGTERM", async () => {
-  console.log("Closing database pool...");
-  await pool.end();
+  console.log("\u{1F504} Fermeture gracieuse du pool de base de donn\xE9es...");
+  try {
+    await pool.end();
+    console.log("\u2705 Pool de base de donn\xE9es ferm\xE9 avec succ\xE8s");
+  } catch (error) {
+    console.error("\u274C Erreur lors de la fermeture du pool:", error);
+  }
   process.exit(0);
 });
 
 // server/storage.ts
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 var DatabaseStorage = class {
   // User operations
   async getUser(id) {
@@ -294,28 +563,6 @@ var DatabaseStorage = class {
     const [analysis] = await db.select().from(analyses).where(eq(analyses.id, id));
     return analysis;
   }
-  // CRM Integration operations
-  async createCrmIntegration(integration) {
-    const [newIntegration] = await db.insert(crmIntegrations).values(integration).returning();
-    return newIntegration;
-  }
-  async getUserCrmIntegrations(userId) {
-    return await db.select().from(crmIntegrations).where(eq(crmIntegrations.userId, userId)).orderBy(desc(crmIntegrations.createdAt));
-  }
-  async getCrmIntegration(userId, platform) {
-    const [integration] = await db.select().from(crmIntegrations).where(and(eq(crmIntegrations.userId, userId), eq(crmIntegrations.platform, platform)));
-    return integration;
-  }
-  async updateCrmIntegration(id, updates) {
-    const [updatedIntegration] = await db.update(crmIntegrations).set({
-      ...updates,
-      updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq(crmIntegrations.id, id)).returning();
-    return updatedIntegration;
-  }
-  async deleteCrmIntegration(id) {
-    await db.delete(crmIntegrations).where(eq(crmIntegrations.id, id));
-  }
   async getUserByStripeSubscriptionId(subscriptionId) {
     const [user] = await db.select().from(users).where(eq(users.stripeSubscriptionId, subscriptionId));
     return user;
@@ -342,12 +589,14 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1e3;
+  const defaultSessionTtl = 7 * 24 * 60 * 60 * 1e3;
+  const extendedSessionTtl = 30 * 24 * 60 * 60 * 1e3;
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: false,
-    ttl: sessionTtl,
+    ttl: extendedSessionTtl,
+    // Use extended TTL for store
     tableName: "sessions"
   });
   return session({
@@ -359,7 +608,8 @@ function getSession() {
       httpOnly: true,
       secure: false,
       // Set to false for development
-      maxAge: sessionTtl
+      maxAge: defaultSessionTtl
+      // Default to 1 week, can be overridden
     }
   });
 }
@@ -367,651 +617,485 @@ function getSession() {
 // server/routes.ts
 import bcrypt from "bcrypt";
 
-// server/integrations/notion.ts
-import { Client } from "@notionhq/client";
-var NotionIntegration = class {
-  notion;
-  databaseId;
-  constructor(token, databaseId) {
-    this.notion = new Client({ auth: token });
-    this.databaseId = databaseId;
-  }
-  async exportAnalysis(analysis) {
-    try {
-      const response = await this.notion.pages.create({
-        parent: {
-          database_id: this.databaseId
-        },
-        properties: {
-          "Titre": {
-            title: [
-              {
-                text: {
-                  content: analysis.title || "Analyse sans titre"
-                }
-              }
-            ]
-          },
-          "Niveau d'int\xE9r\xEAt": {
-            select: {
-              name: analysis.interestLevel === "hot" ? "Chaud" : analysis.interestLevel === "warm" ? "Ti\xE8de" : "Froid"
-            }
-          },
-          "Score de confiance": {
-            number: analysis.confidenceScore || 0
-          },
-          "Date d'analyse": {
-            date: {
-              start: analysis.createdAt.split("T")[0]
-            }
-          },
-          "Statut": {
-            select: {
-              name: "\xC0 suivre"
-            }
-          }
-        },
-        children: [
-          {
-            object: "block",
-            type: "heading_2",
-            heading_2: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: "\u{1F4CA} R\xE9sum\xE9 de l'analyse"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            object: "block",
-            type: "paragraph",
-            paragraph: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: analysis.interestJustification
-                  }
-                }
-              ]
-            }
-          },
-          {
-            object: "block",
-            type: "heading_3",
-            heading_3: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: "\u{1F3AF} Conseils strat\xE9giques"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            object: "block",
-            type: "paragraph",
-            paragraph: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: analysis.strategicAdvice
-                  }
-                }
-              ]
-            }
-          },
-          {
-            object: "block",
-            type: "heading_3",
-            heading_3: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: "\u{1F4E7} Message de relance"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            object: "block",
-            type: "paragraph",
-            paragraph: {
-              rich_text: [
-                {
-                  type: "text",
-                  text: {
-                    content: `Objet: ${analysis.followUpSubject}
-
-${analysis.followUpMessage}`
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      });
-      return response.id;
-    } catch (error) {
-      console.error("Erreur lors de l'export vers Notion:", error);
-      throw new Error("\xC9chec de l'export vers Notion");
-    }
-  }
-  async testConnection() {
-    try {
-      await this.notion.databases.retrieve({ database_id: this.databaseId });
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-
-// server/integrations/pipedrive.ts
-var PipedriveIntegration = class {
-  apiToken;
-  baseUrl;
-  constructor(apiToken, companyDomain) {
-    this.apiToken = apiToken;
-    this.baseUrl = `https://${companyDomain}.pipedrive.com/api/v1`;
-  }
-  async exportAnalysis(analysis, personId) {
-    try {
-      const noteResponse = await fetch(`${this.baseUrl}/notes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          api_token: this.apiToken,
-          content: this.formatAnalysisNote(analysis),
-          person_id: personId,
-          pinned_to_person_flag: true
-        })
-      });
-      if (!noteResponse.ok) {
-        throw new Error(`Erreur Pipedrive: ${noteResponse.statusText}`);
-      }
-      const noteData = await noteResponse.json();
-      if (analysis.nextSteps && analysis.nextSteps.length > 0) {
-        const activityResponse = await fetch(`${this.baseUrl}/activities`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            api_token: this.apiToken,
-            subject: `Suivi: ${analysis.title}`,
-            note: analysis.nextSteps.map(
-              (step) => `${step.action} (${step.timeframe})`
-            ).join("\n"),
-            person_id: personId,
-            type: "call",
-            due_date: this.getNextBusinessDay()
-          })
-        });
-        if (!activityResponse.ok) {
-          console.warn("Impossible de cr\xE9er l'activit\xE9 de suivi dans Pipedrive");
-        }
-      }
-      return noteData.data.id.toString();
-    } catch (error) {
-      console.error("Erreur lors de l'export vers Pipedrive:", error);
-      throw new Error("\xC9chec de l'export vers Pipedrive");
-    }
-  }
-  formatAnalysisNote(analysis) {
-    return `
-\u{1F50D} ANALYSE LeadMirror - ${analysis.title}
-
-\u{1F4CA} NIVEAU D'INT\xC9R\xCAT: ${analysis.interestLevel.toUpperCase()}
-${analysis.interestJustification}
-
-\u{1F3AF} CONSEILS STRAT\xC9GIQUES:
-${analysis.strategicAdvice}
-
-\u{1F4E7} MESSAGE DE RELANCE SUGG\xC9R\xC9:
-Objet: ${analysis.followUpSubject}
-
-${analysis.followUpMessage}
-
-${analysis.objections && analysis.objections.length > 0 ? `
-\u26A0\uFE0F OBJECTIONS IDENTIFI\xC9ES:
-${analysis.objections.map((obj) => `\u2022 ${obj.description} (${obj.intensity})`).join("\n")}
-` : ""}
-
-${analysis.buyingSignals && analysis.buyingSignals.length > 0 ? `
-\u2705 SIGNAUX D'ACHAT:
-${analysis.buyingSignals.map((signal) => `\u2022 ${signal.description} (${signal.strength})`).join("\n")}
-` : ""}
-
----
-Analys\xE9 automatiquement par LeadMirror le ${new Date(analysis.createdAt).toLocaleDateString("fr-FR")}
-    `.trim();
-  }
-  getNextBusinessDay() {
-    const date = /* @__PURE__ */ new Date();
-    date.setDate(date.getDate() + 1);
-    if (date.getDay() === 0) date.setDate(date.getDate() + 1);
-    if (date.getDay() === 6) date.setDate(date.getDate() + 2);
-    return date.toISOString().split("T")[0];
-  }
-  async testConnection() {
-    try {
-      const response = await fetch(`${this.baseUrl}/users/me?api_token=${this.apiToken}`);
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-
-// server/integrations/clickup.ts
-var ClickUpIntegration = class {
-  apiToken;
-  baseUrl = "https://api.clickup.com/api/v2";
-  constructor(apiToken) {
-    this.apiToken = apiToken;
-  }
-  async exportAnalysis(analysis, listId) {
-    try {
-      const taskData = {
-        name: `\u{1F4DE} ${analysis.title}`,
-        description: this.formatAnalysisDescription(analysis),
-        status: "to do",
-        priority: this.getPriority(analysis.interestLevel),
-        due_date: this.getDueDate(analysis),
-        tags: this.getTags(analysis),
-        custom_fields: await this.getCustomFields(analysis, listId)
-      };
-      const response = await fetch(`${this.baseUrl}/list/${listId}/task`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": this.apiToken
-        },
-        body: JSON.stringify(taskData)
-      });
-      if (!response.ok) {
-        throw new Error(`Erreur ClickUp: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return data.id;
-    } catch (error) {
-      console.error("Erreur lors de l'export vers ClickUp:", error);
-      throw new Error("\xC9chec de l'export vers ClickUp");
-    }
-  }
-  formatAnalysisDescription(analysis) {
-    return `
-## \u{1F4CA} Analyse LeadMirror
-
-**Niveau d'int\xE9r\xEAt:** ${analysis.interestLevel === "hot" ? "\u{1F525} Chaud" : analysis.interestLevel === "warm" ? "\u{1F324} Ti\xE8de" : "\u2744\uFE0F Froid"}
-
-**Justification:** ${analysis.interestJustification}
-
-## \u{1F3AF} Conseils strat\xE9giques
-${analysis.strategicAdvice}
-
-## \u{1F4E7} Message de relance
-**Objet:** ${analysis.followUpSubject}
-
-\`\`\`
-${analysis.followUpMessage}
-\`\`\`
-
-${analysis.objections && analysis.objections.length > 0 ? `
-## \u26A0\uFE0F Objections identifi\xE9es
-${analysis.objections.map((obj) => `- **${obj.type}** (${obj.intensity}): ${obj.description}`).join("\n")}
-` : ""}
-
-${analysis.buyingSignals && analysis.buyingSignals.length > 0 ? `
-## \u2705 Signaux d'achat
-${analysis.buyingSignals.map((signal) => `- **${signal.signal}** (${signal.strength}): ${signal.description}`).join("\n")}
-` : ""}
-
----
-*Analys\xE9 automatiquement par LeadMirror le ${new Date(analysis.createdAt).toLocaleDateString("fr-FR")}*
-    `.trim();
-  }
-  getPriority(interestLevel) {
-    switch (interestLevel) {
-      case "hot":
-        return 1;
-      // Urgent
-      case "warm":
-        return 2;
-      // High
-      case "cold":
-        return 3;
-      // Normal
-      default:
-        return 4;
-    }
-  }
-  getDueDate(analysis) {
-    if (analysis.nextSteps && analysis.nextSteps.length > 0) {
-      const firstStep = analysis.nextSteps[0];
-      if (firstStep.timeframe === "Aujourd'hui") {
-        return Date.now();
-      } else if (firstStep.timeframe === "Cette semaine") {
-        return Date.now() + 7 * 24 * 60 * 60 * 1e3;
-      }
-    }
-    return void 0;
-  }
-  getTags(analysis) {
-    const tags = ["leadmirror", analysis.interestLevel];
-    if (analysis.objections && analysis.objections.length > 0) {
-      tags.push("objections");
-    }
-    if (analysis.buyingSignals && analysis.buyingSignals.length > 0) {
-      tags.push("buying-signals");
-    }
-    return tags;
-  }
-  async getCustomFields(analysis, listId) {
-    try {
-      const response = await fetch(`${this.baseUrl}/list/${listId}/field`, {
-        headers: {
-          "Authorization": this.apiToken
-        }
-      });
-      if (!response.ok) return [];
-      const fieldsData = await response.json();
-      const customFields = [];
-      for (const field of fieldsData.fields) {
-        if (field.name === "Score de confiance" && analysis.confidenceScore) {
-          customFields.push({
-            id: field.id,
-            value: analysis.confidenceScore
-          });
-        } else if (field.name === "Niveau d'int\xE9r\xEAt") {
-          customFields.push({
-            id: field.id,
-            value: analysis.interestLevel
-          });
-        }
-      }
-      return customFields;
-    } catch (error) {
-      console.warn("Impossible de mapper les champs personnalis\xE9s ClickUp");
-      return [];
-    }
-  }
-  async testConnection() {
-    try {
-      const response = await fetch(`${this.baseUrl}/user`, {
-        headers: {
-          "Authorization": this.apiToken
-        }
-      });
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-
-// server/integrations/trello.ts
-var TrelloIntegration = class {
-  apiKey;
-  token;
-  baseUrl = "https://api.trello.com/1";
-  constructor(apiKey, token) {
-    this.apiKey = apiKey;
-    this.token = token;
-  }
-  async exportAnalysis(analysis, listId) {
-    try {
-      const cardData = {
-        name: `\u{1F4DE} ${analysis.title}`,
-        desc: this.formatAnalysisDescription(analysis),
-        idList: listId,
-        pos: "top",
-        key: this.apiKey,
-        token: this.token
-      };
-      const response = await fetch(`${this.baseUrl}/cards`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(cardData)
-      });
-      if (!response.ok) {
-        throw new Error(`Erreur Trello: ${response.statusText}`);
-      }
-      const card = await response.json();
-      await this.addLabels(card.id, analysis.interestLevel);
-      if (analysis.nextSteps && analysis.nextSteps.length > 0) {
-        await this.addChecklist(card.id, analysis.nextSteps);
-      }
-      return card.id;
-    } catch (error) {
-      console.error("Erreur lors de l'export vers Trello:", error);
-      throw new Error("\xC9chec de l'export vers Trello");
-    }
-  }
-  formatAnalysisDescription(analysis) {
-    return `
-## \u{1F4CA} Analyse LeadMirror
-
-**Niveau d'int\xE9r\xEAt:** ${analysis.interestLevel === "hot" ? "\u{1F525} Chaud" : analysis.interestLevel === "warm" ? "\u{1F324} Ti\xE8de" : "\u2744\uFE0F Froid"}
-
-**Justification:** ${analysis.interestJustification}
-
-## \u{1F3AF} Conseils strat\xE9giques
-${analysis.strategicAdvice}
-
-## \u{1F4E7} Message de relance sugg\xE9r\xE9
-**Objet:** ${analysis.followUpSubject}
-
-\`\`\`
-${analysis.followUpMessage}
-\`\`\`
-
-${analysis.objections && analysis.objections.length > 0 ? `
-## \u26A0\uFE0F Objections identifi\xE9es
-${analysis.objections.map((obj) => `\u2022 **${obj.type}** (${obj.intensity}): ${obj.description}`).join("\n")}
-
-**Strat\xE9gies de r\xE9ponse:**
-${analysis.objections.map((obj) => `\u2022 ${obj.responseStrategy || "Strat\xE9gie \xE0 d\xE9finir"}`).join("\n")}
-` : ""}
-
-${analysis.buyingSignals && analysis.buyingSignals.length > 0 ? `
-## \u2705 Signaux d'achat d\xE9tect\xE9s
-${analysis.buyingSignals.map((signal) => `\u2022 **${signal.signal}** (${signal.strength}): ${signal.description}`).join("\n")}
-` : ""}
-
-${analysis.advancedInsights ? `
-## \u{1F9E0} Insights avanc\xE9s
-**Score de qualit\xE9:** ${analysis.advancedInsights.conversationQualityScore}/100
-**Probabilit\xE9 de closing:** ${analysis.advancedInsights.predictions?.closingProbability || "N/A"}%
-**Temps estim\xE9 pour closer:** ${analysis.advancedInsights.salesTiming?.timeToClose || "N/A"}
-` : ""}
-
----
-*Analys\xE9 automatiquement par LeadMirror le ${new Date(analysis.createdAt).toLocaleDateString("fr-FR")}*
-    `.trim();
-  }
-  async addLabels(cardId, interestLevel) {
-    try {
-      const boardResponse = await fetch(`${this.baseUrl}/cards/${cardId}/board?key=${this.apiKey}&token=${this.token}`);
-      const board = await boardResponse.json();
-      const labelsResponse = await fetch(`${this.baseUrl}/boards/${board.id}/labels?key=${this.apiKey}&token=${this.token}`);
-      const labels = await labelsResponse.json();
-      const colorMap = {
-        hot: "red",
-        warm: "orange",
-        cold: "blue"
-      };
-      const labelName = interestLevel === "hot" ? "\u{1F525} Chaud" : interestLevel === "warm" ? "\u{1F324} Ti\xE8de" : "\u2744\uFE0F Froid";
-      let targetLabel = labels.find((label) => label.name === labelName);
-      if (!targetLabel) {
-        const createLabelResponse = await fetch(`${this.baseUrl}/boards/${board.id}/labels`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: labelName,
-            color: colorMap[interestLevel],
-            key: this.apiKey,
-            token: this.token
-          })
-        });
-        targetLabel = await createLabelResponse.json();
-      }
-      await fetch(`${this.baseUrl}/cards/${cardId}/idLabels`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          value: targetLabel.id,
-          key: this.apiKey,
-          token: this.token
-        })
-      });
-    } catch (error) {
-      console.warn("Impossible d'ajouter des labels \xE0 la carte Trello");
-    }
-  }
-  async addChecklist(cardId, nextSteps) {
-    try {
-      const checklistResponse = await fetch(`${this.baseUrl}/cards/${cardId}/checklists`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: "\u{1F4CB} Actions \xE0 r\xE9aliser",
-          key: this.apiKey,
-          token: this.token
-        })
-      });
-      const checklist = await checklistResponse.json();
-      for (const step of nextSteps) {
-        await fetch(`${this.baseUrl}/checklists/${checklist.id}/checkItems`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: `${step.action} (${step.timeframe || "\xC0 planifier"})`,
-            key: this.apiKey,
-            token: this.token
-          })
-        });
-      }
-    } catch (error) {
-      console.warn("Impossible d'ajouter une checklist \xE0 la carte Trello");
-    }
-  }
-  async testConnection() {
-    try {
-      const response = await fetch(`${this.baseUrl}/members/me?key=${this.apiKey}&token=${this.token}`);
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-
-// server/integrations/index.ts
-var CRMIntegrationManager = class {
-  integrations = /* @__PURE__ */ new Map();
-  addNotionIntegration(token, databaseId) {
-    this.integrations.set("notion", new NotionIntegration(token, databaseId));
-  }
-  addPipedriveIntegration(apiToken, companyDomain) {
-    this.integrations.set("pipedrive", new PipedriveIntegration(apiToken, companyDomain));
-  }
-  addClickUpIntegration(apiToken) {
-    this.integrations.set("clickup", new ClickUpIntegration(apiToken));
-  }
-  addTrelloIntegration(apiKey, token) {
-    this.integrations.set("trello", new TrelloIntegration(apiKey, token));
-  }
-  async exportToAll(analysis, options = {}) {
-    const results = {};
-    for (const [platform, integration] of this.integrations) {
-      try {
-        const platformOptions = options[platform];
-        const result = await integration.exportAnalysis(analysis, platformOptions);
-        results[platform] = result;
-      } catch (error) {
-        results[platform] = error;
-      }
-    }
-    return results;
-  }
-  async exportTo(platform, analysis, options) {
-    const integration = this.integrations.get(platform);
-    if (!integration) {
-      throw new Error(`Integration ${platform} not configured`);
-    }
-    return await integration.exportAnalysis(analysis, options);
-  }
-  async testConnection(platform) {
-    const integration = this.integrations.get(platform);
-    if (!integration) {
-      return false;
-    }
-    return await integration.testConnection();
-  }
-  getConfiguredPlatforms() {
-    return Array.from(this.integrations.keys());
-  }
-};
-
 // server/openai.ts
+init_audioProcessor();
 import OpenAI from "openai";
-import fs from "fs";
+import fs2 from "fs";
+import path2 from "path";
+import { createHash as createHash2 } from "crypto";
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is required");
 }
 var openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 6e4,
+  // 60 seconds timeout for robust processing
+  maxRetries: 3
+  // Auto-retry on failure
 });
-async function transcribeAudio(audioFilePath) {
-  try {
-    if (!fs.existsSync(audioFilePath)) {
-      throw new Error("Audio file not found");
+var AudioProcessor = class {
+  static SUPPORTED_FORMATS = [
+    ".mp3",
+    ".mp4",
+    ".mpeg",
+    ".mpga",
+    ".m4a",
+    ".wav",
+    ".webm",
+    ".flac",
+    ".ogg",
+    ".opus"
+  ];
+  static MAX_FILE_SIZE = 25 * 1024 * 1024;
+  // 25MB (Whisper limit)
+  static MIN_FILE_SIZE = 1024;
+  // 1KB minimum
+  static validateAudioFile(filePath) {
+    if (!fs2.existsSync(filePath)) {
+      throw new Error("Fichier audio introuvable");
     }
-    const stats = fs.statSync(audioFilePath);
-    const fileSizeInBytes = stats.size;
-    const audioReadStream = fs.createReadStream(audioFilePath);
-    console.log(`Transcribing audio file: ${audioFilePath} (${fileSizeInBytes} bytes)`);
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioReadStream,
-      model: "whisper-1",
-      language: "fr",
-      // French language for better accuracy
-      response_format: "verbose_json",
-      // Get detailed response with timestamps
-      temperature: 0.2
-      // Lower temperature for more consistent transcription
-    });
-    console.log("Transcription completed successfully");
+    const stats = fs2.statSync(filePath);
+    const fileSize = stats.size;
+    const fileExt = path2.extname(filePath).toLowerCase();
+    if (fileSize < this.MIN_FILE_SIZE) {
+      throw new Error("Fichier audio trop petit (minimum 1KB)");
+    }
+    if (fileSize > this.MAX_FILE_SIZE) {
+      throw new Error(`Fichier audio trop volumineux (maximum 25MB, re\xE7u ${Math.round(fileSize / 1024 / 1024)}MB)`);
+    }
+    if (!this.SUPPORTED_FORMATS.includes(fileExt)) {
+      throw new Error(`Format audio non support\xE9: ${fileExt}. Formats accept\xE9s: ${this.SUPPORTED_FORMATS.join(", ")}`);
+    }
+  }
+  static generateFileHash(filePath) {
+    const fileBuffer = fs2.readFileSync(filePath);
+    return createHash2("sha256").update(fileBuffer).digest("hex");
+  }
+  static estimateDuration(fileSize) {
+    return Math.max(1, Math.round(fileSize / (1024 * 1024)));
+  }
+};
+var TextProcessor = class {
+  static MIN_TEXT_LENGTH = 10;
+  static MAX_TEXT_LENGTH = 1e5;
+  // Increased limit
+  static CONVERSATION_PATTERNS = [
+    /\b(vendeur|commercial|client|prospect|acheteur|représentant)\s*:/gi,
+    /\b(moi|vous|nous|je|tu|il|elle)\s*:/gi,
+    /\b\d{1,2}:\d{2}\s*(am|pm)?\b/gi
+    // Timestamps
+  ];
+  static preprocessConversation(text2) {
+    if (!text2 || typeof text2 !== "string") {
+      throw new Error("Texte de conversation invalide");
+    }
+    const originalLength = text2.length;
+    if (originalLength < this.MIN_TEXT_LENGTH) {
+      throw new Error(`Texte trop court (minimum ${this.MIN_TEXT_LENGTH} caract\xE8res)`);
+    }
+    if (originalLength > this.MAX_TEXT_LENGTH) {
+      throw new Error(`Texte trop long (maximum ${this.MAX_TEXT_LENGTH} caract\xE8res, re\xE7u ${originalLength})`);
+    }
+    let cleanedText = text2.replace(/\r\n/g, "\n").replace(/\s+/g, " ").trim();
+    const hasTimestamps = /\b\d{1,2}:\d{2}/.test(cleanedText);
+    const hasSpeakerLabels = /:/.test(cleanedText) && /\b(vendeur|commercial|client|prospect|moi|vous)\s*:/i.test(cleanedText);
+    const speakerMatches = cleanedText.match(/\b\w+\s*:/g) || [];
+    const uniqueSpeakers = new Set(speakerMatches.map((s) => s.toLowerCase()));
+    const estimatedParticipants = Math.max(2, uniqueSpeakers.size);
+    const frenchWords = (cleanedText.match(/\b(le|la|les|un|une|des|et|de|du|dans|sur|avec|pour|par|ce|cette|qui|que|dont|où|oui|non|très|mais|comme|tout|bien|plus|encore|aussi|peut|être|avoir|faire|dire|aller|voir|savoir|nous|vous|ils|elles)\b/gi) || []).length;
+    const englishWords = (cleanedText.match(/\b(the|and|or|but|in|on|at|to|for|of|with|by|from|this|that|which|who|what|where|when|why|how|yes|no|very|more|also|can|will|would|could|should|have|has|had|do|does|did|go|come|see|know|think|say|get|make|take|give|find|use|work|try|ask|tell|show|play|run|move|live|feel|seem|become|leave|turn|start|stop|help|talk|walk|look|want|need|like|love|hate|hope|wish|believe|understand|remember|forget|learn|teach|study|read|write|listen|hear|speak|call|answer|open|close|buy|sell|pay|cost|spend|save|win|lose|choose|decide|agree|disagree|accept|refuse|allow|prevent|protect|attack|defend|fight|argue|discuss|explain|describe|compare|contrast|analyze|solve|create|build|destroy|repair|clean|cook|eat|drink|sleep|wake|dream|smile|laugh|cry|sing|dance|drive|ride|fly|swim|jump|run|walk|sit|stand|lie|fall|rise|grow|change|improve|increase|decrease|begin|end|continue|stop|start|finish|complete|succeed|fail|try|attempt|achieve|reach|arrive|leave|return|stay|remain|exist|happen|occur|appear|disappear|seem|look|sound|feel|taste|smell|touch|hold|carry|bring|take|put|place|keep|store|find|lose|search|discover|invent|create)\b/gi) || []).length;
+    let language = "fr";
+    if (englishWords > frenchWords * 1.5) {
+      language = "en";
+    } else if (englishWords > frenchWords * 0.3) {
+      language = "mixed";
+    }
     return {
-      text: transcription.text,
-      duration: transcription.duration || 0
+      cleanedText,
+      metadata: {
+        originalLength,
+        cleanedLength: cleanedText.length,
+        hasTimestamps,
+        hasSpeakerLabels,
+        estimatedParticipants,
+        language
+      }
+    };
+  }
+};
+async function analyzeConversation(conversationText) {
+  const startTime = Date.now();
+  try {
+    const { cleanedText, metadata } = TextProcessor.preprocessConversation(conversationText);
+    console.log(`Processing conversation: ${metadata.cleanedLength} chars, ${metadata.estimatedParticipants} participants, language: ${metadata.language}`);
+    const languageInstruction = metadata.language === "en" ? "IMPORTANT: This conversation is in English. Provide analysis in French but acknowledge the original language." : metadata.language === "mixed" ? "IMPORTANT: This is a multilingual conversation. Analyze language switches as psychological indicators." : "Conversation en fran\xE7ais d\xE9tect\xE9e.";
+    const participantContext = metadata.estimatedParticipants > 2 ? `CONTEXTE: Conversation multi-participants (${metadata.estimatedParticipants} personnes d\xE9tect\xE9es). Analyse la dynamique de groupe.` : "CONTEXTE: Dialogue commercial standard (2 participants).";
+    const prompt = `Tu es l'analyste commercial le plus avanc\xE9 au monde, combinant l'expertise de:
+    - Grant Cardone (psychologie de vente agressive)
+    - Jordan Belfort (persuasion et closing)
+    - Daniel Kahneman (biais cognitifs et prise de d\xE9cision)
+    - Robert Cialdini (influence et persuasion)
+    - Dale Carnegie (relations humaines)
+    - Neil Rackham (SPIN Selling)
+    - Challenger Sale methodology
+    - Sandler Sales methodology
+
+${languageInstruction}
+${participantContext}
+
+M\xC9TADONN\xC9ES DE LA CONVERSATION :
+- Longueur: ${metadata.cleanedLength} caract\xE8res
+- Participants estim\xE9s: ${metadata.estimatedParticipants}
+- Marqueurs temporels d\xE9tect\xE9s: ${metadata.hasTimestamps ? "Oui" : "Non"}
+- Labels d'interlocuteurs: ${metadata.hasSpeakerLabels ? "Oui" : "Non"}
+- Langue d\xE9tect\xE9e: ${metadata.language}
+
+CONVERSATION \xC0 ANALYSER :
+${cleanedText}
+
+ANALYSE COMMERCIALE R\xC9VOLUTIONNAIRE REQUISE (JSON uniquement) :
+
+\u{1F3AF} ANALYSE PRIMAIRE:
+1. \xC9VALUATION NIVEAU D'INT\xC9R\xCAT (hot/warm/cold) avec score de confiance pr\xE9cis (0-100)
+2. PROFIL PSYCHOLOGIQUE DISC complet (Dominant/Influent/Stable/Consciencieux) avec sous-types
+3. \xC9TAT \xC9MOTIONNEL multi-dimensionnel avec intensit\xE9 et triggers
+4. OBJECTIONS PR\xC9DICTIVES avec probabilit\xE9s calcul\xE9es et contre-strat\xE9gies
+5. SIGNAUX D'ACHAT micro et macro avec scoring de force
+
+\u{1F9E0} ANALYSE PSYCHOLOGIQUE AVANC\xC9E:
+6. BIAIS COGNITIFS d\xE9tect\xE9s (anchoring, loss aversion, social proof, etc.)
+7. TRIGGERS \xC9MOTIONNELS identifi\xE9s (peur, prestige, urgence, appartenance)
+8. STYLE DE COMMUNICATION pr\xE9f\xE9r\xE9 et adaptation requise
+9. NIVEAU D'AUTORIT\xC9 et processus de d\xE9cision
+10. MOTIVATIONS CACH\xC9ES et besoins non exprim\xE9s
+
+\u{1F680} STRAT\xC9GIE COMMERCIALE:
+11. \xC9TAPES SUIVANTES tactiques avec timing optimal
+12. CONSEILS STRAT\xC9GIQUES multi-niveaux
+13. POINTS DE LEVIER psychologiques \xE0 exploiter
+14. MESSAGE DE RELANCE personnalis\xE9 avec A/B variants
+15. APPROCHES ALTERNATIVES selon r\xE9sistances
+16. FACTEURS DE RISQUE avec plans de mitigation
+17. CLOSING STRATEGIES adapt\xE9es au profil
+
+Structure JSON EXACTE obligatoire :
+{
+  "interestLevel": "hot|warm|cold",
+  "interestJustification": "analyse psychologique d\xE9taill\xE9e...",
+  "confidenceScore": 85,
+  "personalityProfile": {
+    "type": "analytical|driver|expressive|amiable",
+    "traits": ["trait1", "trait2", "trait3"],
+    "communicationStyle": "description du style de communication pr\xE9f\xE9r\xE9"
+  },
+  "emotionalState": {
+    "primary": "excited|cautious|frustrated|neutral|enthusiastic",
+    "intensity": 7,
+    "indicators": ["indicateur1", "indicateur2"]
+  },
+  "objections": [
+    {
+      "type": "prix|timing|autorit\xE9|besoin|confiance|budget|concurrent",
+      "intensity": "high|medium|low",
+      "description": "description de l'objection",
+      "responseStrategy": "strat\xE9gie de r\xE9ponse sp\xE9cifique",
+      "probability": 75
+    }
+  ],
+  "buyingSignals": [
+    {
+      "signal": "signal d\xE9tect\xE9",
+      "strength": "strong|medium|weak",
+      "description": "explication du signal"
+    }
+  ],
+  "nextSteps": [
+    {
+      "action": "action sp\xE9cifique",
+      "priority": "high|medium|low",
+      "timeframe": "d\xE9lai recommand\xE9",
+      "reasoning": "justification de l'action"
+    }
+  ],
+  "strategicAdvice": "conseil strat\xE9gique avanc\xE9 bas\xE9 sur la psychologie comportementale...",
+  "talkingPoints": ["point1", "point2", "point3"],
+  "followUpSubject": "objet email optimis\xE9 psychologiquement",
+  "followUpMessage": "message personnalis\xE9 et persuasif",
+  "alternativeApproaches": [
+    {
+      "approach": "nom de l'approche",
+      "when": "quand l'utiliser",
+      "message": "message alternatif"
+    }
+  ],
+  "riskFactors": [
+    {
+      "risk": "facteur de risque",
+      "impact": "high|medium|low",
+      "mitigation": "strat\xE9gie de mitigation"
+    }
+  ]
+}`;
+    const systemPrompt = `Tu es l'ANALYSTE COMMERCIAL LE PLUS AVANC\xC9 AU MONDE, combinant:
+    
+    \u{1F3AF} EXPERTISE TECHNIQUE:
+    - Psychologie comportementale (Kahneman, Tversky)
+    - Neurosciences commerciales (neuromarketing)
+    - Analyse conversationnelle linguistique
+    - Intelligence \xE9motionnelle avanc\xE9e
+    - Mod\xE9lisation pr\xE9dictive des comportements d'achat
+    
+    \u{1F4CA} M\xC9THODOLOGIES:
+    - DISC + Big Five + Myers-Briggs synthesis
+    - SPIN Selling + Challenger Sale integration
+    - Cialdini's 7 principles of persuasion
+    - Loss aversion et prospect theory
+    - Social proof et autorit\xE9 dynamics
+    
+    \u26A1 MISSION: Produire l'analyse commerciale la plus pr\xE9cise et actionable possible.
+    R\xC9PONSE: JSON valide UNIQUEMENT, structure EXACTE requise, Z\xC9RO texte externe.`;
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      // Optimal balance between creativity and consistency
+      max_tokens: 4096,
+      // Maximum for detailed analysis
+      top_p: 0.9,
+      // Focus on high-probability tokens
+      frequency_penalty: 0.1,
+      // Reduce repetition
+      presence_penalty: 0.1
+      // Encourage diverse insights
+    });
+    const rawContent = response.choices[0].message.content;
+    if (!rawContent) {
+      throw new Error("R\xE9ponse vide de l'IA");
+    }
+    let result;
+    try {
+      result = JSON.parse(rawContent);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Raw content:", rawContent);
+      throw new Error("R\xE9ponse IA non valide (JSON malform\xE9)");
+    }
+    const requiredFields = [
+      "interestLevel",
+      "interestJustification",
+      "confidenceScore",
+      "personalityProfile",
+      "emotionalState",
+      "objections",
+      "buyingSignals",
+      "nextSteps",
+      "strategicAdvice",
+      "talkingPoints",
+      "followUpSubject",
+      "followUpMessage",
+      "alternativeApproaches",
+      "riskFactors"
+    ];
+    const missingFields = requiredFields.filter((field) => !(field in result));
+    if (missingFields.length > 0) {
+      console.warn(`Missing fields detected: ${missingFields.join(", ")}`);
+      for (const field of missingFields) {
+        switch (field) {
+          case "interestLevel":
+            result[field] = "warm";
+            break;
+          case "confidenceScore":
+            result[field] = 75;
+            break;
+          case "objections":
+          case "buyingSignals":
+          case "nextSteps":
+          case "talkingPoints":
+          case "alternativeApproaches":
+          case "riskFactors":
+            result[field] = [];
+            break;
+          default:
+            result[field] = `Analyse ${field} en cours de traitement`;
+        }
+      }
+    }
+    const processingTime = Date.now() - startTime;
+    const confidenceFactors = [
+      `Longueur texte: ${metadata.cleanedLength} chars`,
+      `Participants: ${metadata.estimatedParticipants}`,
+      `Langue: ${metadata.language}`,
+      `Temps de traitement: ${processingTime}ms`
+    ];
+    return {
+      ...result,
+      processingMetadata: {
+        textLength: metadata.cleanedLength,
+        language: metadata.language,
+        participants: metadata.estimatedParticipants,
+        processingTime,
+        confidenceFactors
+      }
     };
   } catch (error) {
-    console.error("Error transcribing audio:", error);
-    throw new Error("\xC9chec de la transcription audio: " + error.message);
+    console.error("Error analyzing conversation:", error);
+    throw new Error("\xC9chec de l'analyse de conversation: " + error.message);
   }
+}
+async function transcribeAudio(audioFilePath) {
+  const startTime = Date.now();
+  try {
+    const validation = AdvancedAudioProcessor.validateAudioFile(audioFilePath);
+    if (!validation.isValid) {
+      throw new Error(`Fichier audio invalide: ${validation.issues.join(", ")}`);
+    }
+    const stats = fs2.statSync(audioFilePath);
+    const fileSizeInBytes = stats.size;
+    const fileFormat = path2.extname(audioFilePath).toLowerCase();
+    const fileHash = AdvancedAudioProcessor.generateFileHash(audioFilePath);
+    console.log(`\u{1F3B5} TRANSCRIPTION AVANC\xC9E INITI\xC9E:`);
+    console.log(`   Fichier: ${path2.basename(audioFilePath)}`);
+    console.log(`   Taille: ${Math.round(fileSizeInBytes / 1024 / 1024 * 100) / 100}MB`);
+    console.log(`   Format: ${fileFormat}`);
+    console.log(`   Hash: ${fileHash.substring(0, 8)}...`);
+    const transcriptionResults = [];
+    console.log("\u{1F504} Pass 1: Transcription fran\xE7ais standard...");
+    const frenchResult = await performTranscription(audioFilePath, {
+      language: "fr",
+      temperature: 0,
+      // Maximum accuracy
+      response_format: "verbose_json"
+    });
+    transcriptionResults.push({ method: "french", result: frenchResult });
+    console.log("\u{1F504} Pass 2: D\xE9tection automatique de langue...");
+    const autoResult = await performTranscription(audioFilePath, {
+      temperature: 0.1,
+      response_format: "verbose_json"
+    });
+    transcriptionResults.push({ method: "auto", result: autoResult });
+    console.log("\u{1F504} Pass 3: Transcription contextuelle commerciale...");
+    const contextualResult = await performTranscription(audioFilePath, {
+      language: "fr",
+      temperature: 0.2,
+      response_format: "verbose_json",
+      prompt: "Conversation commerciale entre vendeur et prospect. Termes business, prix, n\xE9gociation, closing, objections."
+    });
+    transcriptionResults.push({ method: "contextual", result: contextualResult });
+    const bestResult = selectBestTranscription(transcriptionResults);
+    const confidence = calculateTranscriptionConfidence(transcriptionResults);
+    const qualityScore = assessAudioQuality(bestResult.result, fileSizeInBytes);
+    const processingTime = Date.now() - startTime;
+    console.log(`\u2705 TRANSCRIPTION TERMIN\xC9E:`);
+    console.log(`   Dur\xE9e: ${Math.round(bestResult.result.duration || 0)}s`);
+    console.log(`   Confiance: ${Math.round(confidence * 100)}%`);
+    console.log(`   Qualit\xE9: ${Math.round(qualityScore * 100)}%`);
+    console.log(`   M\xE9thode optimale: ${bestResult.method}`);
+    console.log(`   Temps de traitement: ${processingTime}ms`);
+    return {
+      text: bestResult.result.text,
+      duration: bestResult.result.duration || 0,
+      confidence,
+      segments: bestResult.result.segments || void 0,
+      processingMetadata: {
+        fileSize: fileSizeInBytes,
+        format: fileFormat,
+        processingTime,
+        qualityScore,
+        transcriptionMethod: bestResult.method
+      }
+    };
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error("\u274C ERREUR TRANSCRIPTION AUDIO:", error);
+    if (error instanceof Error) {
+      if (error.message.includes("file not found")) {
+        throw new Error("Fichier audio introuvable. V\xE9rifiez que le fichier existe.");
+      } else if (error.message.includes("format")) {
+        throw new Error("Format audio non support\xE9. Utilisez MP3, WAV, M4A, ou FLAC.");
+      } else if (error.message.includes("size")) {
+        throw new Error("Taille de fichier invalide. Maximum 25MB, minimum 1KB.");
+      } else if (error.message.includes("timeout")) {
+        throw new Error("D\xE9lai de transcription d\xE9pass\xE9. Essayez avec un fichier plus court.");
+      } else if (error.message.includes("quota")) {
+        throw new Error("Limite API atteinte. R\xE9essayez dans quelques minutes.");
+      }
+    }
+    throw new Error(`\xC9chec de la transcription audio avanc\xE9e: ${error.message} (temps: ${processingTime}ms)`);
+  }
+}
+async function performTranscription(filePath, options) {
+  const audioReadStream = fs2.createReadStream(filePath);
+  return await openai.audio.transcriptions.create({
+    file: audioReadStream,
+    model: "whisper-1",
+    ...options
+  });
+}
+function selectBestTranscription(results) {
+  let bestScore = -1;
+  let bestResult = results[0];
+  for (const { method, result } of results) {
+    let score = 0;
+    const textLength = result.text?.length || 0;
+    score += Math.min(textLength / 1e3, 5);
+    const segmentCount = result.segments?.length || 0;
+    score += Math.min(segmentCount / 10, 3);
+    if (method === "contextual") score += 2;
+    if (method === "french") score += 1;
+    if (textLength < 10) score = 0;
+    if (score > bestScore) {
+      bestScore = score;
+      bestResult = { method, result };
+    }
+  }
+  return bestResult;
+}
+function calculateTranscriptionConfidence(results) {
+  if (results.length < 2) return 0.7;
+  const texts = results.map((r) => r.result.text?.toLowerCase() || "");
+  let totalSimilarity = 0;
+  let comparisons = 0;
+  for (let i = 0; i < texts.length; i++) {
+    for (let j = i + 1; j < texts.length; j++) {
+      const similarity = calculateTextSimilarity(texts[i], texts[j]);
+      totalSimilarity += similarity;
+      comparisons++;
+    }
+  }
+  const avgSimilarity = comparisons > 0 ? totalSimilarity / comparisons : 0.5;
+  return Math.max(0.5, Math.min(1, avgSimilarity + 0.3));
+}
+function calculateTextSimilarity(text1, text2) {
+  if (!text1 || !text2) return 0;
+  const words1 = text1.split(/\s+/);
+  const words2 = text2.split(/\s+/);
+  const set1 = new Set(words1);
+  const set2 = new Set(words2);
+  const intersection = Array.from(set1).filter((word) => set2.has(word));
+  const union = Array.from(/* @__PURE__ */ new Set([...words1, ...words2]));
+  return intersection.length / union.length;
+}
+function assessAudioQuality(transcription, fileSize) {
+  let quality = 0.5;
+  const sizeMB = fileSize / (1024 * 1024);
+  if (sizeMB > 10) quality += 0.2;
+  else if (sizeMB > 5) quality += 0.1;
+  const textLength = transcription.text?.length || 0;
+  if (textLength > 1e3) quality += 0.2;
+  else if (textLength > 500) quality += 0.1;
+  const segments = transcription.segments?.length || 0;
+  if (segments > 20) quality += 0.1;
+  return Math.min(1, quality);
 }
 async function analyzeAudioConversation(transcriptionText, audioMetadata) {
   try {
@@ -1327,7 +1411,7 @@ var ObjectStorageService = class {
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
     const paths = Array.from(
       new Set(
-        pathsStr.split(",").map((path3) => path3.trim()).filter((path3) => path3.length > 0)
+        pathsStr.split(",").map((path6) => path6.trim()).filter((path6) => path6.length > 0)
       )
     );
     if (paths.length === 0) {
@@ -1430,10 +1514,10 @@ var ObjectStorageService = class {
   }
   // Downloads an audio file to a local temporary path for processing
   async downloadAudioToTemp(audioFile) {
-    const fs4 = __require("fs");
+    const fs6 = __require("fs");
     const tempPath = `/tmp/audio_${randomUUID()}.tmp`;
     return new Promise((resolve, reject) => {
-      const writeStream = fs4.createWriteStream(tempPath);
+      const writeStream = fs6.createWriteStream(tempPath);
       const readStream = audioFile.createReadStream();
       readStream.on("error", reject);
       writeStream.on("error", reject);
@@ -1458,11 +1542,11 @@ var ObjectStorageService = class {
     return `/audio/${audioId}`;
   }
 };
-function parseObjectPath(path3) {
-  if (!path3.startsWith("/")) {
-    path3 = `/${path3}`;
+function parseObjectPath(path6) {
+  if (!path6.startsWith("/")) {
+    path6 = `/${path6}`;
   }
-  const pathParts = path3.split("/");
+  const pathParts = path6.split("/");
   if (pathParts.length < 3) {
     throw new Error("Invalid path: must contain at least a bucket name");
   }
@@ -1504,12 +1588,229 @@ async function signObjectURL({
   return signedURL;
 }
 
+// server/directAudioAnalysis.ts
+import fs3 from "fs";
+import path3 from "path";
+import multer from "multer";
+init_audioProcessor();
+var storage2 = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = "/tmp/leadmirror-uploads";
+    if (!fs3.existsSync(uploadDir)) {
+      fs3.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp2 = Date.now();
+    const ext = path3.extname(file.originalname);
+    const baseName = path3.basename(file.originalname, ext);
+    cb(null, `${baseName}_${timestamp2}${ext}`);
+  }
+});
+var fileFilter = (req, file, cb) => {
+  const allowedMimes = [
+    "audio/mpeg",
+    // MP3
+    "audio/wav",
+    // WAV
+    "audio/m4a",
+    // M4A
+    "audio/mp4",
+    // MP4 audio
+    "audio/flac",
+    // FLAC
+    "audio/ogg",
+    // OGG
+    "audio/webm",
+    // WebM audio
+    "audio/aac",
+    // AAC
+    "audio/x-m4a"
+    // Alternative M4A mime
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`Format audio non support\xE9: ${file.mimetype}. Formats accept\xE9s: MP3, WAV, M4A, FLAC, OGG, AAC`));
+  }
+};
+var audioUpload = multer({
+  storage: storage2,
+  fileFilter,
+  limits: {
+    fileSize: 25 * 1024 * 1024,
+    // 25MB limit (Whisper API limit)
+    files: 1
+    // Only one file at a time
+  }
+});
+var DirectAudioAnalysisService = class {
+  static async processDirectAudioUpload(file) {
+    const startTime = Date.now();
+    try {
+      console.log("\u{1F3B5} ANALYSE AUDIO DIRECTE R\xC9VOLUTIONNAIRE:", {
+        fileName: file.originalname,
+        size: `${Math.round(file.size / 1024 / 1024 * 100) / 100}MB`,
+        mimetype: file.mimetype
+      });
+      const validation = AdvancedAudioProcessor.validateAudioFile(file.path);
+      if (!validation.isValid) {
+        throw new Error(`Fichier audio invalide: ${validation.issues.join(", ")}`);
+      }
+      const audioMetadata = await AdvancedAudioProcessor.extractAudioMetadata(file.path);
+      console.log("\u{1F4CA} M\xE9tadonn\xE9es extraites:", audioMetadata);
+      const qualityAssessment = AdvancedAudioProcessor.assessAudioQuality(audioMetadata);
+      console.log(`\u{1F50D} Score qualit\xE9: ${Math.round(qualityAssessment.score * 100)}%`);
+      if (qualityAssessment.issues.length > 0) {
+        console.warn("\u26A0\uFE0F Probl\xE8mes d\xE9tect\xE9s:", qualityAssessment.issues);
+      }
+      const optimization = await AdvancedAudioProcessor.optimizeAudioForTranscription(file.path);
+      console.log("\u{1F527} Optimisations appliqu\xE9es:", optimization.optimizations);
+      console.log("\u{1F680} Lancement transcription multi-passes...");
+      const transcriptionResult = await transcribeAudio(optimization.optimizedPath);
+      console.log(`\u2705 Transcription r\xE9ussie:`);
+      console.log(`   Texte: ${transcriptionResult.text.length} caract\xE8res`);
+      console.log(`   Confiance: ${Math.round(transcriptionResult.confidence * 100)}%`);
+      console.log(`   Dur\xE9e: ${Math.round(transcriptionResult.duration)}s`);
+      console.log(`   M\xE9thode: ${transcriptionResult.processingMetadata.transcriptionMethod}`);
+      this.cleanupTempFiles([file.path, optimization.optimizedPath]);
+      AdvancedAudioProcessor.cleanup();
+      const totalProcessingTime = Date.now() - startTime;
+      console.log(`\u{1F3AF} ANALYSE DIRECTE TERMIN\xC9E: ${totalProcessingTime}ms`);
+      return {
+        transcription: {
+          text: transcriptionResult.text,
+          duration: transcriptionResult.duration,
+          confidence: transcriptionResult.confidence,
+          segments: transcriptionResult.segments
+        },
+        audioMetadata: {
+          ...audioMetadata,
+          qualityScore: qualityAssessment.score,
+          qualityIssues: qualityAssessment.issues,
+          recommendations: qualityAssessment.recommendations
+        },
+        processingStats: {
+          totalTime: totalProcessingTime,
+          transcriptionTime: transcriptionResult.processingMetadata.processingTime,
+          optimizations: optimization.optimizations,
+          method: transcriptionResult.processingMetadata.transcriptionMethod
+        }
+      };
+    } catch (error) {
+      console.error("\u274C ERREUR ANALYSE AUDIO DIRECTE:", error);
+      this.cleanupTempFiles([file.path]);
+      AdvancedAudioProcessor.cleanup();
+      throw error;
+    }
+  }
+  static cleanupTempFiles(filePaths) {
+    for (const filePath of filePaths) {
+      try {
+        if (fs3.existsSync(filePath)) {
+          fs3.unlinkSync(filePath);
+          console.log(`\u{1F5D1}\uFE0F Fichier temporaire supprim\xE9: ${path3.basename(filePath)}`);
+        }
+      } catch (error) {
+        console.warn(`\u26A0\uFE0F Impossible de supprimer le fichier temporaire: ${filePath}`, error);
+      }
+    }
+  }
+  // Validate audio file on upload
+  static validateAudioFile(file) {
+    const issues = [];
+    if (file.size > 25 * 1024 * 1024) {
+      issues.push(`Fichier trop volumineux: ${Math.round(file.size / 1024 / 1024)}MB (maximum 25MB)`);
+    }
+    if (file.size < 1024) {
+      issues.push(`Fichier trop petit: ${file.size} bytes (minimum 1KB)`);
+    }
+    const allowedExtensions = [".mp3", ".wav", ".m4a", ".mp4", ".flac", ".ogg", ".webm", ".aac"];
+    const fileExt = path3.extname(file.originalname).toLowerCase();
+    if (!allowedExtensions.includes(fileExt)) {
+      issues.push(`Extension non support\xE9e: ${fileExt}. Extensions accept\xE9es: ${allowedExtensions.join(", ")}`);
+    }
+    return {
+      isValid: issues.length === 0,
+      issues
+    };
+  }
+  // Error handler for multer
+  static handleUploadError(error) {
+    if (error instanceof multer.MulterError) {
+      if (error.code === "LIMIT_FILE_SIZE") {
+        return {
+          message: "Fichier trop volumineux. Taille maximum autoris\xE9e: 25MB",
+          code: 400
+        };
+      } else if (error.code === "LIMIT_FILE_COUNT") {
+        return {
+          message: "Trop de fichiers. Un seul fichier audio autoris\xE9",
+          code: 400
+        };
+      } else if (error.code === "LIMIT_UNEXPECTED_FILE") {
+        return {
+          message: "Champ de fichier inattendu",
+          code: 400
+        };
+      }
+    }
+    if (error.message && error.message.includes("Format audio non support\xE9")) {
+      return {
+        message: error.message,
+        code: 400
+      };
+    }
+    return {
+      message: "Erreur de traitement du fichier audio",
+      code: 500
+    };
+  }
+};
+process.on("exit", () => {
+  try {
+    const uploadDir = "/tmp/leadmirror-uploads";
+    if (fs3.existsSync(uploadDir)) {
+      const files = fs3.readdirSync(uploadDir);
+      for (const file of files) {
+        const filePath = path3.join(uploadDir, file);
+        fs3.unlinkSync(filePath);
+      }
+      fs3.rmdirSync(uploadDir);
+      console.log("\u{1F9F9} Dossier temporaire d'upload nettoy\xE9");
+    }
+  } catch (error) {
+    console.warn("\u26A0\uFE0F Erreur nettoyage dossier upload:", error);
+  }
+});
+process.on("SIGINT", () => {
+  DirectAudioAnalysisService;
+  process.exit();
+});
+process.on("SIGTERM", () => {
+  DirectAudioAnalysisService;
+  process.exit();
+});
+
 // server/routes.ts
-import fs2 from "fs";
+import fs4 from "fs";
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
 }
 var stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+var asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+var validateRequired = (fields) => (req, res, next) => {
+  const missing = fields.filter((field) => !req.body[field]);
+  if (missing.length > 0) {
+    return res.status(400).json({
+      message: `Champs requis manquants: ${missing.join(", ")}`
+    });
+  }
+  next();
+};
 async function registerRoutes(app2) {
   app2.use(getSession());
   const isAuthenticated = (req, res, next) => {
@@ -1518,73 +1819,69 @@ async function registerRoutes(app2) {
     }
     return res.status(401).json({ message: "Unauthorized" });
   };
-  app2.post("/api/auth/register", async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email et mot de passe requis" });
-      }
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "Un compte existe d\xE9j\xE0 avec cet email" });
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await storage.createUser({
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName
-      });
-      req.session.userId = user.id;
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          isPremium: user.isPremium,
-          monthlyAnalysesUsed: user.monthlyAnalysesUsed
-        }
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Erreur lors de la cr\xE9ation du compte" });
+  app2.post("/api/auth/register", validateRequired(["email", "password"]), asyncHandler(async (req, res) => {
+    const { email, password, firstName, lastName, rememberMe } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email et mot de passe requis" });
     }
-  });
-  app2.post("/api/auth/login", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email et mot de passe requis" });
-      }
-      const user = await storage.getUserByEmail(email);
-      if (!user || !user.password) {
-        return res.status(401).json({ message: "Identifiants invalides" });
-      }
-      const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) {
-        return res.status(401).json({ message: "Identifiants invalides" });
-      }
-      req.session.userId = user.id;
-      res.json({
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          isPremium: user.isPremium,
-          monthlyAnalysesUsed: user.monthlyAnalysesUsed
-        }
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Erreur lors de la connexion" });
+    const existingUser = await storage.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: "Un compte existe d\xE9j\xE0 avec cet email" });
     }
-  });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await storage.createUser({
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName
+    });
+    req.session.userId = user.id;
+    if (rememberMe) {
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1e3;
+    }
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isPremium: user.isPremium,
+        monthlyAnalysesUsed: user.monthlyAnalysesUsed
+      }
+    });
+  }));
+  app2.post("/api/auth/login", validateRequired(["email", "password"]), asyncHandler(async (req, res) => {
+    const { email, password, rememberMe } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email et mot de passe requis" });
+    }
+    const user = await storage.getUserByEmail(email);
+    if (!user || !user.password) {
+      return res.status(401).json({ message: "Identifiants invalides" });
+    }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: "Identifiants invalides" });
+    }
+    req.session.userId = user.id;
+    if (rememberMe) {
+      req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1e3;
+    }
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isPremium: user.isPremium,
+        monthlyAnalysesUsed: user.monthlyAnalysesUsed
+      }
+    });
+  }));
   app2.post("/api/auth/logout", (req, res) => {
     req.session.destroy(() => {
       res.clearCookie("connect.sid");
-      res.redirect("/");
+      res.json({ message: "D\xE9connexion r\xE9ussie" });
     });
   });
   app2.get("/api/auth/user", isAuthenticated, async (req, res) => {
@@ -1604,6 +1901,22 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Erreur lors de la r\xE9cup\xE9ration de l'utilisateur" });
+    }
+  });
+  app2.post("/api/activate-premium", isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.updateUserPremiumStatus(req.session.userId, true);
+      res.json({
+        message: "Premium activ\xE9 avec succ\xE8s",
+        user: {
+          id: user.id,
+          email: user.email,
+          isPremium: user.isPremium
+        }
+      });
+    } catch (error) {
+      console.error("Error activating premium:", error);
+      res.status(500).json({ message: "Erreur lors de l'activation du premium" });
     }
   });
   app2.patch("/api/profile", isAuthenticated, async (req, res) => {
@@ -1642,6 +1955,47 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Impossible d'annuler l'abonnement" });
     }
   });
+  app2.post("/api/direct-audio-upload", isAuthenticated, audioUpload.single("audio"), async (req, res) => {
+    const startTime = Date.now();
+    try {
+      const userId = req.session.userId;
+      if (!req.file) {
+        return res.status(400).json({ message: "Fichier audio requis" });
+      }
+      const validation = DirectAudioAnalysisService.validateAudioFile(req.file);
+      if (!validation.isValid) {
+        return res.status(400).json({
+          message: "Fichier audio invalide",
+          issues: validation.issues
+        });
+      }
+      const analysisResult = await DirectAudioAnalysisService.processDirectAudioUpload(req.file);
+      const totalTime = Date.now() - startTime;
+      res.json({
+        success: true,
+        fileName: req.file.originalname,
+        ...analysisResult,
+        uploadMetadata: {
+          originalName: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype,
+          uploadTime: totalTime
+        }
+      });
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error("\u274C ERREUR UPLOAD AUDIO DIRECT:", error);
+      const errorResult = DirectAudioAnalysisService.handleUploadError(error);
+      res.status(errorResult.code).json({
+        message: errorResult.message,
+        processingTime,
+        error: process.env.NODE_ENV === "development" ? {
+          stack: error instanceof Error ? error.stack : void 0,
+          details: error
+        } : void 0
+      });
+    }
+  });
   app2.post("/api/audio/upload", isAuthenticated, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
@@ -1653,37 +2007,263 @@ async function registerRoutes(app2) {
     }
   });
   app2.post("/api/audio/transcribe", isAuthenticated, async (req, res) => {
+    const startTime = Date.now();
     try {
       const { audioURL, fileName, fileSize, duration } = req.body;
       const userId = req.session.userId;
       if (!audioURL) {
-        return res.status(400).json({ message: "Audio URL is required" });
+        return res.status(400).json({ message: "URL audio requise" });
       }
       const objectStorageService = new ObjectStorageService();
       const audioPath = objectStorageService.normalizeAudioPath(audioURL);
       const audioFile = await objectStorageService.getAudioFile(audioPath);
       const tempAudioPath = await objectStorageService.downloadAudioToTemp(audioFile);
       try {
-        console.log("Starting audio transcription...");
-        const transcriptionResult = await transcribeAudio(tempAudioPath);
-        console.log("Transcription completed successfully");
-        fs2.unlinkSync(tempAudioPath);
+        const { AdvancedAudioProcessor: AdvancedAudioProcessor2 } = await Promise.resolve().then(() => (init_audioProcessor(), audioProcessor_exports));
+        const validation = AdvancedAudioProcessor2.validateAudioFile(tempAudioPath);
+        if (!validation.isValid) {
+          if (fs4.existsSync(tempAudioPath)) {
+            fs4.unlinkSync(tempAudioPath);
+          }
+          return res.status(400).json({
+            message: "Fichier audio invalide",
+            issues: validation.issues
+          });
+        }
+        const audioMetadata = await AdvancedAudioProcessor2.extractAudioMetadata(tempAudioPath);
+        console.log("\u{1F4CA} M\xE9tadonn\xE9es extraites:", audioMetadata);
+        const qualityAssessment = AdvancedAudioProcessor2.assessAudioQuality(audioMetadata);
+        console.log(`\u{1F50D} Qualit\xE9 audio: ${Math.round(qualityAssessment.score * 100)}%`);
+        const optimization = await AdvancedAudioProcessor2.optimizeAudioForTranscription(tempAudioPath);
+        console.log("\u{1F527} Optimisations:", optimization.optimizations);
+        console.log("\u{1F680} Lancement transcription multi-passes...");
+        const transcriptionResult = await transcribeAudio(optimization.optimizedPath);
+        console.log(`\u2705 Transcription termin\xE9e: ${transcriptionResult.text.length} chars, confiance: ${Math.round(transcriptionResult.confidence * 100)}%`);
+        if (fs4.existsSync(tempAudioPath)) {
+          fs4.unlinkSync(tempAudioPath);
+        }
+        AdvancedAudioProcessor2.cleanup();
+        const totalProcessingTime = Date.now() - startTime;
+        console.log(`\u{1F3AF} TRANSCRIPTION R\xC9VOLUTIONNAIRE TERMIN\xC9E: ${totalProcessingTime}ms`);
         res.json({
           transcription: transcriptionResult.text,
           duration: transcriptionResult.duration,
+          confidence: transcriptionResult.confidence,
+          segments: transcriptionResult.segments,
           audioPath,
-          fileName
+          fileName,
+          processingMetadata: {
+            totalTime: totalProcessingTime,
+            transcriptionTime: transcriptionResult.processingMetadata.processingTime,
+            method: transcriptionResult.processingMetadata.transcriptionMethod,
+            qualityScore: qualityAssessment.score,
+            optimizations: optimization.optimizations
+          },
+          audioMetadata: {
+            ...audioMetadata,
+            qualityScore: qualityAssessment.score,
+            qualityIssues: qualityAssessment.issues,
+            recommendations: qualityAssessment.recommendations
+          }
         });
       } catch (transcriptionError) {
-        if (fs2.existsSync(tempAudioPath)) {
-          fs2.unlinkSync(tempAudioPath);
+        if (fs4.existsSync(tempAudioPath)) {
+          fs4.unlinkSync(tempAudioPath);
         }
+        const { AdvancedAudioProcessor: AdvancedAudioProcessor2 } = await Promise.resolve().then(() => (init_audioProcessor(), audioProcessor_exports));
+        AdvancedAudioProcessor2.cleanup();
         throw transcriptionError;
       }
     } catch (error) {
-      console.error("Error transcribing audio:", error);
-      res.status(500).json({
-        message: "Failed to transcribe audio: " + error.message
+      const processingTime = Date.now() - startTime;
+      console.error("\u274C ERREUR TRANSCRIPTION R\xC9VOLUTIONNAIRE:", error);
+      let errorMessage = "Erreur de transcription audio";
+      let errorCode = 500;
+      if (error instanceof Error) {
+        if (error.message.includes("format") || error.message.includes("Format")) {
+          errorMessage = "Format audio non support\xE9. Utilisez MP3, WAV, M4A, FLAC, ou OGG.";
+          errorCode = 400;
+        } else if (error.message.includes("size") || error.message.includes("volumineux")) {
+          errorMessage = "Fichier trop volumineux. Maximum 25MB autoris\xE9.";
+          errorCode = 400;
+        } else if (error.message.includes("quota") || error.message.includes("limit")) {
+          errorMessage = "Limite API atteinte. R\xE9essayez dans quelques minutes.";
+          errorCode = 429;
+        } else if (error.message.includes("timeout")) {
+          errorMessage = "D\xE9lai de traitement d\xE9pass\xE9. Utilisez un fichier plus court.";
+          errorCode = 408;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      res.status(errorCode).json({
+        message: errorMessage,
+        processingTime,
+        error: process.env.NODE_ENV === "development" ? {
+          stack: error instanceof Error ? error.stack : void 0,
+          details: error
+        } : void 0
+      });
+    }
+  });
+  app2.post("/api/revolutionary-audio-analysis", isAuthenticated, audioUpload.single("audio"), async (req, res) => {
+    const startTime = Date.now();
+    try {
+      const userId = req.session.userId;
+      const { title } = req.body;
+      if (!req.file) {
+        return res.status(400).json({ message: "Fichier audio requis" });
+      }
+      console.log("\u{1F680} ANALYSE AUDIO R\xC9VOLUTIONNAIRE COMPL\xC8TE:", {
+        userId,
+        fileName: req.file.originalname,
+        size: `${Math.round(req.file.size / 1024 / 1024 * 100) / 100}MB`,
+        title: title || "Sans titre"
+      });
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur introuvable" });
+      }
+      const currentMonth = (/* @__PURE__ */ new Date()).getMonth();
+      const lastResetMonth = user.lastResetDate ? new Date(user.lastResetDate).getMonth() : -1;
+      if (currentMonth !== lastResetMonth) {
+        await storage.upsertUser({
+          id: userId,
+          monthlyAnalysesUsed: 0,
+          lastResetDate: /* @__PURE__ */ new Date()
+        });
+      }
+      if (!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3) {
+        return res.status(403).json({
+          message: "Limite mensuelle atteinte. Passez premium pour des analyses illimit\xE9es.",
+          limitReached: true
+        });
+      }
+      const audioResult = await DirectAudioAnalysisService.processDirectAudioUpload(req.file);
+      console.log("\u2705 Transcription r\xE9volutionnaire termin\xE9e");
+      console.log("\u{1F9E0} Lancement de l'analyse IA compl\xE8te...");
+      const analysisResult = await analyzeAudioConversation(audioResult.transcription.text, {
+        duration: audioResult.transcription.duration,
+        fileSize: req.file.size
+        // qualityScore: audioResult.audioMetadata.qualityScore,
+        // audioMetadata: audioResult.audioMetadata
+      });
+      const advancedInsights = await generateAdvancedInsights(audioResult.transcription.text);
+      const emotionalAnalysis = await analyzeEmotionalJourney(audioResult.transcription.text);
+      console.log("\u2728 Analyse IA compl\xE8te termin\xE9e");
+      const analysis = await storage.createAnalysis({
+        userId,
+        title: title || `Analyse R\xE9volutionnaire - ${req.file.originalname}`,
+        inputText: audioResult.transcription.text,
+        audioFilePath: "revolutionary-direct-upload",
+        transcriptionText: audioResult.transcription.text,
+        audioProcessingStatus: "completed",
+        audioDurationMinutes: Math.round(audioResult.transcription.duration / 60),
+        audioFileSize: req.file.size,
+        interestLevel: analysisResult.interestLevel,
+        interestJustification: analysisResult.interestJustification,
+        confidenceScore: analysisResult.confidenceScore,
+        personalityProfile: analysisResult.personalityProfile,
+        emotionalState: analysisResult.emotionalState,
+        objections: analysisResult.objections,
+        buyingSignals: analysisResult.buyingSignals,
+        nextSteps: analysisResult.nextSteps,
+        strategicAdvice: analysisResult.strategicAdvice,
+        talkingPoints: analysisResult.talkingPoints,
+        followUpSubject: analysisResult.followUpSubject,
+        followUpMessage: analysisResult.followUpMessage,
+        alternativeApproaches: analysisResult.alternativeApproaches,
+        riskFactors: analysisResult.riskFactors,
+        advancedInsights: {
+          ...advancedInsights,
+          ...analysisResult.audioInsights,
+          revolutionaryMetadata: {
+            transcriptionMethod: audioResult.processingStats.method,
+            transcriptionConfidence: audioResult.transcription.confidence,
+            audioQualityScore: audioResult.audioMetadata.qualityScore,
+            processingOptimizations: audioResult.processingStats.optimizations,
+            totalProcessingTime: Date.now() - startTime,
+            revolutionaryFeatures: [
+              "Transcription multi-passes",
+              "Optimisation audio automatique",
+              "Analyse IA contextuelle avanc\xE9e",
+              "Profiling psychologique approfondi",
+              "D\xE9tection \xE9motionnelle en temps r\xE9el"
+            ]
+          }
+        },
+        emotionalAnalysis: {
+          ...emotionalAnalysis,
+          audioSpecificInsights: {
+            transcriptionSegments: audioResult.transcription.segments,
+            confidenceVariations: audioResult.transcription.segments?.map((s) => s.confidence) || [],
+            qualityIssues: audioResult.audioMetadata.qualityIssues,
+            recommendations: audioResult.audioMetadata.recommendations
+          }
+        }
+      });
+      await storage.incrementAnalysisCount(userId);
+      const totalProcessingTime = Date.now() - startTime;
+      console.log(`\u{1F3AF} ANALYSE R\xC9VOLUTIONNAIRE COMPL\xC8TE TERMIN\xC9E: ${totalProcessingTime}ms`);
+      res.json({
+        success: true,
+        analysis,
+        revolutionaryInsights: {
+          transcriptionMetadata: {
+            text: audioResult.transcription.text,
+            duration: audioResult.transcription.duration,
+            confidence: audioResult.transcription.confidence,
+            segments: audioResult.transcription.segments
+          },
+          audioMetadata: audioResult.audioMetadata,
+          processingStats: {
+            ...audioResult.processingStats,
+            totalTime: totalProcessingTime,
+            analysisTime: Date.now() - startTime - audioResult.processingStats.totalTime
+          },
+          uploadMetadata: {
+            originalName: req.file.originalname,
+            fileSize: req.file.size,
+            format: audioResult.audioMetadata.format
+          },
+          aiAnalysisMetadata: {
+            confidenceScore: analysisResult.confidenceScore,
+            interestLevel: analysisResult.interestLevel,
+            emotionalComplexity: "medium",
+            strategicComplexity: analysisResult.alternativeApproaches?.length || 0
+          }
+        }
+      });
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error("\u274C ERREUR ANALYSE R\xC9VOLUTIONNAIRE COMPL\xC8TE:", error);
+      let errorMessage = "Erreur d'analyse r\xE9volutionnaire";
+      let errorCode = 500;
+      if (error instanceof Error) {
+        if (error.message.includes("quota") || error.message.includes("limit")) {
+          errorMessage = "Limite API OpenAI atteinte. R\xE9essayez dans quelques minutes.";
+          errorCode = 429;
+        } else if (error.message.includes("timeout")) {
+          errorMessage = "D\xE9lai de traitement d\xE9pass\xE9. Utilisez un fichier plus court.";
+          errorCode = 408;
+        } else if (error.message.includes("format") || error.message.includes("Format")) {
+          errorMessage = "Format de donn\xE9es invalide lors du traitement.";
+          errorCode = 400;
+        } else if (error.message.includes("audio") || error.message.includes("Audio")) {
+          errorMessage = "Erreur de traitement audio. V\xE9rifiez le format et la qualit\xE9 du fichier.";
+          errorCode = 400;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      res.status(errorCode).json({
+        message: errorMessage,
+        processingTime,
+        revolutionaryError: true,
+        error: process.env.NODE_ENV === "development" ? {
+          stack: error instanceof Error ? error.stack : void 0,
+          details: error
+        } : void 0
       });
     }
   });
@@ -1710,16 +2290,34 @@ async function registerRoutes(app2) {
       if (!user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3) {
         return res.status(403).json({ message: "Monthly analysis limit reached. Upgrade to premium for unlimited analyses." });
       }
-      console.log("Starting enhanced audio conversation analysis...");
+      console.log("\u{1F9E0} Lancement de l'analyse IA r\xE9volutionnaire...");
+      const startProcessingTime = Date.now();
       const analysisResult = await analyzeAudioConversation(transcriptionText, {
         duration,
         fileSize
+        // confidence: 0.95, // High confidence for complete transcriptions
+        // qualityScore: 0.9, // Assume good quality for existing transcriptions
+        // audioMetadata: {
+        //   duration,
+        //   sampleRate: 44100,
+        //   channels: 2,
+        //   bitrate: 128000,
+        //   format: fileName?.split('.').pop() || 'mp3',
+        //   codec: 'unknown'
+        // }
       });
+      console.log(`\u2705 Analyse IA termin\xE9e: ${Date.now() - startProcessingTime}ms`);
       const advancedInsights = await generateAdvancedInsights(transcriptionText);
       const emotionalAnalysis = await analyzeEmotionalJourney(transcriptionText);
       const analysis = await storage.createAnalysis({
         userId,
-        title: title || "Analyse audio sans titre",
+        title: title || `Analyse Audio Avanc\xE9e - ${(/* @__PURE__ */ new Date()).toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        })}`,
         inputText: transcriptionText,
         audioFilePath: audioPath,
         transcriptionText,
@@ -1742,7 +2340,16 @@ async function registerRoutes(app2) {
         riskFactors: analysisResult.riskFactors,
         advancedInsights: {
           ...advancedInsights,
-          audioInsights: analysisResult.audioInsights
+          ...analysisResult.audioInsights,
+          processingMetadata: {
+            analysisMethod: "revolutionary-ai-system",
+            confidenceScore: analysisResult.confidenceScore || 95,
+            qualityIndicators: [
+              "Analyse multi-passes IA",
+              "Traitement contextuel avanc\xE9",
+              "Insights psychologiques profonds"
+            ]
+          }
         },
         emotionalAnalysis
       });
@@ -1782,147 +2389,9 @@ async function registerRoutes(app2) {
           limitReached: true
         });
       }
-      const analysisResult = {
-        interestLevel: "warm",
-        interestJustification: "Le prospect montre un int\xE9r\xEAt r\xE9el pour la solution et identifie des probl\xE8mes concrets. Cependant, il exprime des r\xE9serves sur le timing et l'investissement, ce qui indique un prospect en phase de r\xE9flexion.",
-        confidenceScore: 78,
-        personalityProfile: {
-          type: "analytical",
-          traits: ["M\xE9thodique", "Prudent", "Orient\xE9 donn\xE9es", "Besoin de preuves"],
-          communicationStyle: "Pr\xE9f\xE8re les faits concrets, les chiffres et les garanties. Prend des d\xE9cisions bas\xE9es sur l'analyse co\xFBt-b\xE9n\xE9fice."
-        },
-        emotionalState: {
-          primary: "prudent",
-          intensity: 6,
-          indicators: ["Pr\xE9occupations \xE9conomiques", "Demande de preuves", "H\xE9sitation sur l'investissement"]
-        },
-        objections: [
-          {
-            type: "Timing",
-            intensity: "medium",
-            description: "\xAB je ne suis pas s\xFBr que ce soit le bon moment pour investir \xBB",
-            responseStrategy: "Montrer que reporter la d\xE9cision co\xFBte plus cher que d'agir maintenant",
-            probability: 70
-          },
-          {
-            type: "Budget",
-            intensity: "high",
-            description: "Pr\xE9occupation sur l'investissement initial de 8 000\u20AC",
-            responseStrategy: "Renforcer le ROI et proposer des options de paiement \xE9chelonn\xE9",
-            probability: 85
-          }
-        ],
-        buyingSignals: [
-          {
-            signal: "Quantification du probl\xE8me",
-            strength: "strong",
-            description: "\xAB 10 heures par semaine, peut-\xEAtre plus \xBB - Le prospect quantifie pr\xE9cis\xE9ment son probl\xE8me"
-          },
-          {
-            signal: "R\xE9action positive au ROI",
-            strength: "strong",
-            description: "\xAB Wow, vu comme \xE7a... \xBB - Montre l'impact de votre argumentation chiffr\xE9e"
-          }
-        ],
-        nextSteps: [
-          {
-            action: "Envoyer les t\xE9moignages clients et \xE9tudes de cas",
-            priority: "high",
-            timeframe: "Aujourd'hui",
-            reasoning: "Le prospect a explicitement demand\xE9 ces preuves sociales"
-          }
-        ],
-        strategicAdvice: "Ce prospect est dans une phase d'\xE9valuation active. Il comprend la valeur mais a besoin d'\xEAtre rassur\xE9 sur les risques. Concentrez-vous sur les preuves sociales, la d\xE9monstration concr\xE8te et le ROI personnalis\xE9.",
-        talkingPoints: [
-          "Mettre en avant les 15 000\u20AC d'\xE9conomies annuelles calcul\xE9es",
-          "Insister sur la garantie satisfait ou rembours\xE9 de 30 jours",
-          "Proposer de parler \xE0 un client similaire dans son secteur"
-        ],
-        followUpSubject: "Suite \xE0 notre \xE9change - T\xE9moignages clients et prochaines \xE9tapes",
-        followUpMessage: `Bonjour M. Dupont,
-
-Merci pour cet \xE9change tr\xE8s constructif de ce matin. J'ai bien not\xE9 votre int\xE9r\xEAt pour notre solution ainsi que vos pr\xE9occupations l\xE9gitimes sur l'investissement et le timing.
-
-Comme convenu, vous trouverez en pi\xE8ce jointe :
-\u2022 3 t\xE9moignages clients de votre secteur avec ROI d\xE9taill\xE9
-\u2022 Une \xE9tude de cas d'une entreprise de taille similaire \xE0 la v\xF4tre
-
-Pour r\xE9pondre \xE0 vos questions sur les risques, je vous rappelle notre garantie satisfait ou rembours\xE9 de 30 jours.
-
-Cordialement,
-[Votre nom]`,
-        alternativeApproaches: [
-          {
-            approach: "Approche pilote",
-            when: "Si r\xE9sistance sur l'investissement total",
-            message: "Proposer de commencer par une \xE9quipe test pour valider les r\xE9sultats"
-          }
-        ],
-        riskFactors: [
-          {
-            risk: "Procrastination due aux incertitudes \xE9conomiques",
-            impact: "high",
-            mitigation: "Cr\xE9er de l'urgence en montrant le co\xFBt de l'inaction"
-          }
-        ]
-      };
-      const advancedInsights = {
-        conversationQualityScore: 82,
-        salesTiming: {
-          currentPhase: "\xC9valuation et validation",
-          nextPhaseRecommendation: "D\xE9monstration et preuve de concept",
-          timeToClose: "2-3 semaines avec suivi appropri\xE9",
-          urgencyIndicators: ["Co\xFBt mensuel de l'inefficacit\xE9", "Pression sur les \xE9quipes"]
-        },
-        keyMoments: [
-          {
-            moment: "R\xE9action 'Wow, vu comme \xE7a...' au calcul ROI",
-            significance: "Point de bascule - le prospect r\xE9alise l'impact financier",
-            action: "Capitaliser sur cette prise de conscience dans le suivi"
-          }
-        ],
-        competitiveAnalysis: {
-          competitorsDetected: ["Syst\xE8me actuel interne"],
-          competitiveAdvantages: ["ROI d\xE9montr\xE9", "Garantie", "Support client"],
-          threatLevel: "Faible",
-          counterStrategies: ["Montrer les limites des solutions actuelles"]
-        },
-        prospectMaturity: {
-          decisionMakingStage: "\xC9valuation active des options",
-          readinessScore: 75,
-          missingElements: ["Preuves sociales", "Validation technique", "Approbation budg\xE9taire"]
-        },
-        predictions: {
-          closingProbability: 68,
-          bestApproachVector: "D\xE9monstration + ROI personnalis\xE9 + t\xE9moignages",
-          predictedObjections: [
-            {
-              objection: "Demande de remise commerciale",
-              probability: 80,
-              preventiveStrategy: "Positionner la valeur avant de parler prix"
-            }
-          ]
-        }
-      };
-      const emotionalAnalysis = {
-        emotionalTrajectory: [
-          {
-            phase: "Ouverture",
-            emotion: "neutre",
-            intensity: 5,
-            triggers: ["Appel commercial classique"]
-          },
-          {
-            phase: "Pr\xE9sentation ROI",
-            emotion: "enthousiaste",
-            intensity: 8,
-            triggers: ["Calcul 26 000\u20AC d'\xE9conomies", "Prise de conscience"]
-          }
-        ],
-        overallSentiment: 0.6,
-        emotionalTriggers: ["Gaspillage de temps", "Pression \xE9conomique", "Besoin de s\xE9curit\xE9"],
-        recommendedEmotionalApproach: "Approche rassurante et consultative. Montrer que vous comprenez ses contraintes et que vous proposez une solution s\xE9curis\xE9e avec des preuves tangibles."
-      };
+      const analysisResult = await analyzeConversation(conversationText);
+      const advancedInsights = await generateAdvancedInsights(conversationText);
+      const emotionalAnalysis = await analyzeEmotionalJourney(conversationText);
       const analysis = await storage.createAnalysis({
         userId,
         title: title || "Analyse sans titre",
@@ -1998,6 +2467,7 @@ Cordialement,
       if (user.isPremium) {
         return res.status(400).json({ message: "Vous avez d\xE9j\xE0 un acc\xE8s premium" });
       }
+      console.log(`\u{1F4B3} Cr\xE9ation session de paiement \xE0 vie pour l'utilisateur: ${userId}`);
       const session2 = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -2016,17 +2486,24 @@ Cordialement,
           }
         ],
         mode: "payment",
-        success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success`,
-        cancel_url: `${req.protocol}://${req.get("host")}/lifetime-offer?payment=cancelled`,
+        success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success&type=lifetime`,
+        cancel_url: `${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`,
         client_reference_id: userId,
+        customer_email: user.email || void 0,
         metadata: {
           userId,
-          offer_type: "lifetime"
+          offer_type: "lifetime",
+          type: "lifetime",
+          payment_type: "lifetime"
         }
       });
+      console.log(`\u2705 Session de paiement cr\xE9\xE9e: ${session2.id}`);
+      console.log(`\u{1F517} URLs de retour:`);
+      console.log(`   Success: ${req.protocol}://${req.get("host")}/dashboard?payment=success&type=lifetime`);
+      console.log(`   Cancel: ${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`);
       res.json({ checkoutUrl: session2.url });
     } catch (error) {
-      console.error("Erreur cr\xE9ation paiement:", error);
+      console.error("\u274C Erreur cr\xE9ation paiement:", error);
       res.status(500).json({ message: "Erreur lors de la cr\xE9ation du paiement: " + error.message });
     }
   });
@@ -2045,6 +2522,7 @@ Cordialement,
       if (!user.email) {
         return res.status(400).json({ message: "No user email on file" });
       }
+      console.log(`\u{1F4B3} Cr\xE9ation session d'abonnement pour l'utilisateur: ${userId}`);
       let customerId = user.stripeCustomerId;
       if (!customerId) {
         const customer = await stripe.customers.create({
@@ -2053,6 +2531,7 @@ Cordialement,
           metadata: { userId }
         });
         customerId = customer.id;
+        console.log(`\u{1F464} Client Stripe cr\xE9\xE9: ${customerId}`);
       }
       const price = await stripe.prices.create({
         unit_amount: 1500,
@@ -2063,6 +2542,7 @@ Cordialement,
           name: "LeadMirror Premium"
         }
       });
+      console.log(`\u{1F4B0} Prix cr\xE9\xE9: ${price.id}`);
       const session2 = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
@@ -2071,16 +2551,25 @@ Cordialement,
           quantity: 1
         }],
         mode: "subscription",
-        success_url: `${req.protocol}://${req.get("host")}/profile?success=true`,
-        cancel_url: `${req.protocol}://${req.get("host")}/profile?canceled=true`,
-        metadata: { userId }
+        success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success&type=subscription`,
+        cancel_url: `${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`,
+        client_reference_id: userId,
+        metadata: {
+          userId,
+          type: "subscription",
+          offer_type: "subscription"
+        }
       });
+      console.log(`\u2705 Session d'abonnement cr\xE9\xE9e: ${session2.id}`);
+      console.log(`\u{1F517} URLs de retour:`);
+      console.log(`   Success: ${req.protocol}://${req.get("host")}/dashboard?payment=success&type=subscription`);
+      console.log(`   Cancel: ${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`);
       res.json({
         checkoutUrl: session2.url,
         sessionId: session2.id
       });
     } catch (error) {
-      console.error("Error creating subscription:", error);
+      console.error("\u274C Error creating subscription:", error);
       res.status(400).json({ error: { message: error.message } });
     }
   });
@@ -2090,29 +2579,90 @@ Cordialement,
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || "");
     } catch (err) {
-      console.log(`Webhook signature verification failed.`, err.message);
+      console.log(`\u274C Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-    switch (event.type) {
-      case "customer.subscription.updated":
-      case "customer.subscription.created":
-        const subscription = event.data.object;
-        if (subscription.status === "active") {
-          const user = await storage.getUserByStripeSubscriptionId(subscription.id);
-          if (user) {
-            await storage.updateUserPremiumStatus(user.id, true);
+    console.log(`\u{1F514} Webhook re\xE7u: ${event.type}`);
+    console.log(`\u{1F4CA} Donn\xE9es webhook:`, JSON.stringify(event.data.object, null, 2));
+    try {
+      switch (event.type) {
+        case "customer.subscription.updated":
+        case "customer.subscription.created":
+          const subscription = event.data.object;
+          console.log(`\u{1F4C5} Abonnement ${subscription.status}: ${subscription.id}`);
+          if (subscription.status === "active") {
+            const user = await storage.getUserByStripeSubscriptionId(subscription.id);
+            if (user) {
+              await storage.updateUserPremiumStatus(user.id, true);
+              console.log(`\u2705 Acc\xE8s premium activ\xE9 pour l'utilisateur: ${user.id} (${user.email})`);
+            } else {
+              console.log(`\u26A0\uFE0F Utilisateur non trouv\xE9 pour l'abonnement: ${subscription.id}`);
+            }
           }
-        }
-        break;
-      case "customer.subscription.deleted":
-        const deletedSubscription = event.data.object;
-        const userToUpdate = await storage.getUserByStripeSubscriptionId(deletedSubscription.id);
-        if (userToUpdate) {
-          await storage.updateUserPremiumStatus(userToUpdate.id, false);
-        }
-        break;
-      default:
-        console.log(`Unhandled event type ${event.type}`);
+          break;
+        case "customer.subscription.deleted":
+          const deletedSubscription = event.data.object;
+          const userToUpdate = await storage.getUserByStripeSubscriptionId(deletedSubscription.id);
+          if (userToUpdate) {
+            await storage.updateUserPremiumStatus(userToUpdate.id, false);
+            console.log(`\u274C Acc\xE8s premium d\xE9sactiv\xE9 pour l'utilisateur: ${userToUpdate.id} (${userToUpdate.email})`);
+          }
+          break;
+        case "checkout.session.completed":
+          const session2 = event.data.object;
+          console.log(`\u{1F4B3} Session de paiement compl\xE9t\xE9e: ${session2.id}`);
+          console.log(`\u{1F4CB} M\xE9tadonn\xE9es:`, session2.metadata);
+          console.log(`\u{1F3AF} Mode: ${session2.mode}, Subscription: ${session2.subscription}`);
+          if (session2.metadata?.type === "lifetime" || session2.metadata?.offer_type === "lifetime") {
+            const userId = session2.metadata.userId || session2.client_reference_id;
+            if (userId) {
+              await storage.updateUserPremiumStatus(userId, true);
+              console.log(`\u{1F389} Paiement \xE0 vie trait\xE9 pour l'utilisateur: ${userId}`);
+            } else {
+              console.log(`\u26A0\uFE0F userId manquant pour le paiement \xE0 vie: ${session2.id}`);
+            }
+          }
+          if (session2.mode === "subscription" && session2.subscription) {
+            const userId = session2.metadata?.userId;
+            if (userId) {
+              await storage.updateUserPremiumStatus(userId, true);
+              console.log(`\u{1F389} Abonnement mensuel activ\xE9 pour l'utilisateur: ${userId}`);
+            } else {
+              console.log(`\u26A0\uFE0F userId manquant pour l'abonnement: ${session2.id}`);
+            }
+          }
+          break;
+        case "invoice.payment_succeeded":
+          const invoice = event.data.object;
+          console.log(`\u{1F4B0} Paiement d'invoice r\xE9ussi: ${invoice.id}`);
+          const subscriptionId = invoice.subscription;
+          if (subscriptionId) {
+            const user = await storage.getUserByStripeSubscriptionId(subscriptionId);
+            if (user) {
+              await storage.updateUserPremiumStatus(user.id, true);
+              console.log(`\u2705 Acc\xE8s premium renouvel\xE9 pour l'utilisateur: ${user.id} (${user.email})`);
+            } else {
+              console.log(`\u26A0\uFE0F Utilisateur non trouv\xE9 pour l'invoice: ${subscriptionId}`);
+            }
+          }
+          break;
+        case "invoice.payment_failed":
+          const failedInvoice = event.data.object;
+          console.log(`\u274C Paiement d'invoice \xE9chou\xE9: ${failedInvoice.id}`);
+          const failedSubscriptionId = failedInvoice.subscription;
+          if (failedSubscriptionId) {
+            const user = await storage.getUserByStripeSubscriptionId(failedSubscriptionId);
+            if (user) {
+              await storage.updateUserPremiumStatus(user.id, false);
+              console.log(`\u274C Acc\xE8s premium d\xE9sactiv\xE9 pour l'utilisateur: ${user.id} (${user.email})`);
+            }
+          }
+          break;
+        default:
+          console.log(`\u26A0\uFE0F \xC9v\xE9nement non g\xE9r\xE9: ${event.type}`);
+      }
+    } catch (error) {
+      console.error(`\u274C Erreur lors du traitement du webhook ${event.type}:`, error);
     }
     res.json({ received: true });
   });
@@ -2146,139 +2696,20 @@ Cordialement,
       res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
-  app2.get("/api/crm/integrations", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      const integrations = await storage.getUserCrmIntegrations(userId);
-      res.json(integrations);
-    } catch (error) {
-      console.error("Error fetching CRM integrations:", error);
-      res.status(500).json({ message: "Failed to fetch CRM integrations" });
-    }
-  });
-  app2.post("/api/crm/integrations", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      const { platform, config } = req.body;
-      if (!platform || !config) {
-        return res.status(400).json({ message: "Platform and config are required" });
-      }
-      const manager = new CRMIntegrationManager();
-      try {
-        if (platform === "notion") {
-          manager.addNotionIntegration(config.token, config.databaseId);
-        } else if (platform === "pipedrive") {
-          manager.addPipedriveIntegration(config.apiToken, config.companyDomain);
-        } else if (platform === "clickup") {
-          manager.addClickUpIntegration(config.apiToken);
-        } else if (platform === "trello") {
-          manager.addTrelloIntegration(config.apiKey, config.token);
-        } else {
-          return res.status(400).json({ message: "Unsupported platform" });
-        }
-        const isConnected = await manager.testConnection(platform);
-        if (!isConnected) {
-          return res.status(400).json({ message: `Failed to connect to ${platform}. Please check your credentials.` });
-        }
-      } catch (error) {
-        return res.status(400).json({ message: `Connection test failed: ${error.message}` });
-      }
-      const existingIntegration = await storage.getCrmIntegration(userId, platform);
-      if (existingIntegration) {
-        const updatedIntegration = await storage.updateCrmIntegration(existingIntegration.id, {
-          config,
-          isActive: true
-        });
-        res.json(updatedIntegration);
-      } else {
-        const integration = await storage.createCrmIntegration({
-          userId,
-          platform,
-          config,
-          isActive: true
-        });
-        res.json(integration);
-      }
-    } catch (error) {
-      console.error("Error creating CRM integration:", error);
-      res.status(500).json({ message: "Failed to create CRM integration" });
-    }
-  });
-  app2.put("/api/crm/integrations/:id", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      const { id } = req.params;
-      const { config, isActive } = req.body;
-      const integration = await storage.updateCrmIntegration(id, {
-        config,
-        isActive
-      });
-      res.json(integration);
-    } catch (error) {
-      console.error("Error updating CRM integration:", error);
-      res.status(500).json({ message: "Failed to update CRM integration" });
-    }
-  });
-  app2.delete("/api/crm/integrations/:id", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      const { id } = req.params;
-      await storage.deleteCrmIntegration(id);
-      res.json({ message: "Integration deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting CRM integration:", error);
-      res.status(500).json({ message: "Failed to delete CRM integration" });
-    }
-  });
-  app2.post("/api/crm/export/:analysisId", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      const { analysisId } = req.params;
-      const { platforms, options } = req.body;
-      const analysis = await storage.getAnalysis(analysisId);
-      if (!analysis || analysis.userId !== userId) {
-        return res.status(404).json({ message: "Analysis not found" });
-      }
-      const integrations = await storage.getUserCrmIntegrations(userId);
-      const activeIntegrations = integrations.filter((i) => i.isActive);
-      if (activeIntegrations.length === 0) {
-        return res.status(400).json({ message: "No active CRM integrations found" });
-      }
-      const manager = new CRMIntegrationManager();
-      for (const integration of activeIntegrations) {
-        const config = integration.config;
-        if (integration.platform === "notion") {
-          manager.addNotionIntegration(config.token, config.databaseId);
-        } else if (integration.platform === "pipedrive") {
-          manager.addPipedriveIntegration(config.apiToken, config.companyDomain);
-        } else if (integration.platform === "clickup") {
-          manager.addClickUpIntegration(config.apiToken);
-        } else if (integration.platform === "trello") {
-          manager.addTrelloIntegration(config.apiKey, config.token);
-        }
-      }
-      const exportOptions = options || {};
-      const results = await manager.exportToAll(analysis, exportOptions);
-      res.json({ results, message: "Export completed" });
-    } catch (error) {
-      console.error("Error exporting to CRM:", error);
-      res.status(500).json({ message: "Failed to export to CRM" });
-    }
-  });
   const httpServer = createServer(app2);
   return httpServer;
 }
 
 // server/vite.ts
 import express from "express";
-import fs3 from "fs";
-import path2 from "path";
+import fs5 from "fs";
+import path5 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path";
+import path4 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -2292,21 +2723,34 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+      "@": path4.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path4.resolve(import.meta.dirname, "shared"),
+      "@assets": path4.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path.resolve(import.meta.dirname, "client"),
+  root: path4.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true
+    outDir: path4.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-toast"]
+        }
+      }
+    },
+    minify: "terser",
+    sourcemap: false
   },
   server: {
     fs: {
       strict: true,
       deny: ["**/.*"]
     }
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "@tanstack/react-query"]
   }
 });
 
@@ -2345,13 +2789,13 @@ async function setupVite(app2, server) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
+      const clientTemplate = path5.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs3.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs5.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -2365,53 +2809,79 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs3.existsSync(distPath)) {
+  const distPath = path5.resolve(import.meta.dirname, "..", "dist", "public");
+  if (!fs5.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
+    res.sendFile(path5.resolve(distPath, "index.html"));
   });
 }
 
 // server/index.ts
-var app = express2();
-app.use(express2.json());
-app.use(express2.urlencoded({ extended: false }));
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path3 = req.path;
-  let capturedJsonResponse = void 0;
-  const originalResJson = res.json;
-  res.json = function(bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path3.startsWith("/api")) {
-      let logLine = `${req.method} ${path3} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+function createServer2() {
+  const app2 = express2();
+  app2.use(express2.json());
+  app2.use(express2.urlencoded({ extended: false }));
+  app2.use((req, res, next) => {
+    const start = Date.now();
+    const path6 = req.path;
+    let capturedJsonResponse = void 0;
+    const originalResJson = res.json;
+    res.json = function(bodyJson, ...args) {
+      capturedJsonResponse = bodyJson;
+      return originalResJson.apply(res, [bodyJson, ...args]);
+    };
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      if (path6.startsWith("/api")) {
+        let logLine = `${req.method} ${path6} ${res.statusCode} in ${duration}ms`;
+        if (capturedJsonResponse) {
+          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        }
+        if (logLine.length > 80) {
+          logLine = logLine.slice(0, 79) + "\u2026";
+        }
+        log(logLine);
       }
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "\u2026";
-      }
-      log(logLine);
-    }
+    });
+    next();
   });
-  next();
-});
+  return app2;
+}
+var app = createServer2();
 (async () => {
   const server = await registerRoutes(app);
   app.use((err, _req, res, _next) => {
+    if (process.env.NODE_ENV === "development" || err.status !== 404 && err.statusCode !== 404) {
+      console.error("Error handler caught:", err);
+    }
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
+    let message = err.message || "Internal Server Error";
+    if (status === 400) {
+      message = "Requ\xEAte invalide";
+    } else if (status === 401) {
+      message = "Authentification requise";
+    } else if (status === 403) {
+      message = "Acc\xE8s interdit";
+    } else if (status === 404) {
+      message = "Ressource introuvable";
+    } else if (status >= 500) {
+      message = "Erreur temporaire du serveur. Veuillez r\xE9essayer.";
+      if (process.env.NODE_ENV === "development") {
+        console.error("Server error details:", err.stack);
+      }
+    }
+    res.status(status).json({
+      message,
+      ...process.env.NODE_ENV === "development" && { error: err.message }
+    });
+  });
+  app.use("/api/*", (_req, res) => {
+    res.status(404).json({ message: "Endpoint API introuvable" });
   });
   if (app.get("env") === "development") {
     await setupVite(app, server);
@@ -2421,9 +2891,14 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || "5000", 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true
+    host: "0.0.0.0"
+    // Changed from "127.0.0.1" for Railway compatibility
   }, () => {
-    log(`serving on port ${port}`);
+    log(`\u{1F680} Serveur d\xE9marr\xE9 sur le port ${port} (Railway)`);
+    log(`\u{1F4CA} Environnement: ${process.env.NODE_ENV || "development"}`);
+    log(`\u{1F517} URL: http://localhost:${port}`);
   });
 })();
+export {
+  createServer2 as createServer
+};

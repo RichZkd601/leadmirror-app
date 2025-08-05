@@ -1,41 +1,65 @@
-FROM node:18-alpine
+# Utiliser une image Node.js optimisée pour la production
+FROM node:20-alpine AS base
+
+# Installer les dépendances système nécessaires
+RUN apk add --no-cache \
+    curl \
+    && rm -rf /var/cache/apk/*
 
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Installer les dépendances système nécessaires
-RUN apk add --no-cache curl
+# Copier les fichiers de configuration npm pour optimiser le cache
+COPY package*.json .npmrc* ./
 
-# Copier les fichiers de configuration
-COPY package*.json ./
-COPY railway.json ./
-COPY railway.toml ./
+# Installer les dépendances avec gestion d'erreurs robuste
+RUN npm ci --no-audit --no-fund --prefer-offline --production=false && \
+    npm cache clean --force && \
+    echo "✅ Dépendances installées avec succès"
 
-# Installer TOUTES les dépendances (dev + prod) pour le build
-RUN npm ci && npm cache clean --force
-
-# Copier le code source complet
+# Copier le reste du code source
 COPY . .
 
-# Rendre le script de build exécutable
-RUN chmod +x railway-build.sh
+# Vérifier que tous les fichiers nécessaires sont présents
+RUN echo "🔍 Vérification des fichiers critiques..." && \
+    ls -la package.json && \
+    ls -la server/index.ts && \
+    echo "✅ Tous les fichiers critiques sont présents"
 
-# Vérifier que le script existe
-RUN ls -la railway-build.sh
+# Build de l'application
+RUN echo "🔨 Build de l'application..." && \
+    npm run build && \
+    echo "✅ Build terminé avec succès"
 
-# Exécuter le build
-RUN ./railway-build.sh
+# Vérifier que les fichiers de build existent
+RUN echo "🔍 Vérification des fichiers de build..." && \
+    ls -la dist/ && \
+    ls -la dist/index.js && \
+    ls -la dist/public/ && \
+    echo "✅ Tous les fichiers de build sont présents"
 
 # Créer un utilisateur non-root pour la sécurité
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 && \
+    echo "✅ Utilisateur non-root créé"
 
-# Changer la propriété des fichiers
-RUN chown -R nextjs:nodejs /app
+# Changer la propriété des fichiers et nettoyer
+RUN chown -R nextjs:nodejs /app && \
+    echo "✅ Permissions mises à jour"
+
+# Passer à l'utilisateur non-root
 USER nextjs
 
 # Exposer le port (Railway définit automatiquement PORT)
 EXPOSE 5000
 
+# Définir les variables d'environnement par défaut
+ENV NODE_ENV=production
+ENV PORT=5000
+
+# Healthcheck pour vérifier que l'application fonctionne
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:$PORT/api/health || exit 1
+
 # Commande de démarrage optimisée pour Railway
-CMD ["npm", "start"] 
+CMD ["node", "scripts/start.js"] 

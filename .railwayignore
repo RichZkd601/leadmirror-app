@@ -1,15 +1,21 @@
-# Dépendances
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
 # Fichiers de développement
+node_modules/
 .env
 .env.local
 .env.development
 .env.test
-.env.production
+
+# Fichiers de build
+dist/
+build/
+.next/
+out/
+
+# Fichiers de logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Fichiers système
 .DS_Store
@@ -18,17 +24,18 @@ Thumbs.db
 # Fichiers de cache
 .cache/
 .parcel-cache/
-.npm/
 
 # Fichiers de test
 coverage/
 .nyc_output/
-test-results/
+
+# Fichiers temporaires
+*.tmp
+*.temp
 
 # Fichiers de documentation
 README.md
 *.md
-docs/
 
 # Fichiers de configuration de développement
 .vscode/
@@ -39,25 +46,7 @@ docs/
 # Fichiers de données de test
 test-data/
 sample-data/
-attached_assets/
 
 # Fichiers de backup
 *.bak
-*.backup
-
-# Fichiers de logs
-logs/
-*.log
-
-# Fichiers temporaires
-*.tmp
-*.temp
-.tmp/
-
-# Fichiers Git
-.git/
-.gitignore
-
-# Fichiers Railway (pour éviter les conflits)
-.railwayignore
-railway.json 
+*.backup 

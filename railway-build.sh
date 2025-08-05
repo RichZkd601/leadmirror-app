@@ -10,10 +10,18 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# Vérifier que node_modules existe
-if [ ! -d "node_modules" ]; then
-    echo "📦 Installation des dépendances..."
-    npm ci || npm install
+# Nettoyer le cache npm au début
+echo "🧹 Nettoyage du cache npm..."
+npm cache clean --force || true
+
+# Installation des dépendances avec fallback robuste
+echo "📦 Installation des dépendances..."
+if ! npm ci --no-audit --no-fund --prefer-offline; then
+    echo "⚠️  npm ci a échoué, tentative avec npm install..."
+    if ! npm install --no-audit --no-fund --prefer-offline; then
+        echo "❌ Erreur: Impossible d'installer les dépendances"
+        exit 1
+    fi
 fi
 
 # Vérifier que les dépendances sont installées
@@ -75,6 +83,10 @@ fi
 if [ -z "$SESSION_SECRET" ]; then
     echo "⚠️  Avertissement: SESSION_SECRET non définie"
 fi
+
+# Nettoyer le cache npm à la fin
+echo "🧹 Nettoyage final du cache npm..."
+npm cache clean --force || true
 
 echo "✅ Build Railway terminé avec succès !"
 echo "📊 Résumé du build:"
