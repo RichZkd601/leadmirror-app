@@ -1245,15 +1245,15 @@ Sarah"
 
       {/* Pricing Modal */}
       <Dialog open={showPricing} onOpenChange={setShowPricing}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-background pb-4 border-b">
             <DialogTitle className="text-2xl">Choisissez votre formule</DialogTitle>
             <DialogDescription>
               Passez au premium pour débloquer les analyses illimitées et les fonctionnalités avancées
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid md:grid-cols-3 gap-6 mt-6">
+          <div className="grid md:grid-cols-3 gap-6 mt-6 pb-6">
             {/* Free Plan */}
             <Card>
               <CardHeader className="text-center">
