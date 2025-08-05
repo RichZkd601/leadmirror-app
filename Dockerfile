@@ -10,16 +10,18 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 COPY railway.json ./
 COPY railway.toml ./
-COPY railway-build.sh ./
-
-# Rendre le script de build exécutable
-RUN chmod +x railway-build.sh
 
 # Installer TOUTES les dépendances (dev + prod) pour le build
 RUN npm ci && npm cache clean --force
 
-# Copier le code source
+# Copier le code source complet
 COPY . .
+
+# Rendre le script de build exécutable
+RUN chmod +x railway-build.sh
+
+# Vérifier que le script existe
+RUN ls -la railway-build.sh
 
 # Exécuter le build
 RUN ./railway-build.sh
