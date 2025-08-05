@@ -31,6 +31,7 @@ Language: French language support implemented throughout the application interfa
 - **Pricing**: €99 one-time payment for lifetime access (vs €15/month regular pricing)
 - **Features**: Landing page redesign, dedicated offer page, Stripe Checkout integration
 - **Marketing**: Urgency-driven messaging with countdown timer and limited availability
+- **Dashboard Integration**: Added as third pricing option in upgrade modal with special highlighting
 
 ## System Architecture
 

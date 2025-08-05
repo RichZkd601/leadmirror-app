@@ -1261,7 +1261,7 @@ Sarah"
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <div className="grid md:grid-cols-3 gap-6 mt-6">
             {/* Free Plan */}
             <Card>
               <CardHeader className="text-center">
@@ -1359,6 +1359,81 @@ Sarah"
                   <Crown className="w-4 h-4 mr-2" />
                   Passer au premium
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Lifetime Offer */}
+            <Card className="border-2 border-yellow-500 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-center py-1">
+                <span className="text-xs font-bold">🔥 OFFRE LIMITÉE</span>
+              </div>
+              <CardHeader className="text-center pt-8">
+                <Badge className="mb-2 bg-yellow-500 text-black">Meilleure valeur</Badge>
+                <CardTitle>Accès à Vie</CardTitle>
+                <div className="text-3xl font-bold text-yellow-600">€99</div>
+                <CardDescription>
+                  <span className="line-through text-muted-foreground">€180/an</span>
+                  <span className="text-green-600 font-semibold ml-2">Économisez 45%</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    </div>
+                    <span>Analyses ILLIMITÉES à vie</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    </div>
+                    <span>Toutes les fonctionnalités premium</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    </div>
+                    <span>Accès aux futures fonctionnalités</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    </div>
+                    <span>Support prioritaire à vie</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+                    </div>
+                    <span>Plus jamais d'abonnement</span>
+                  </li>
+                </ul>
+                <Button 
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
+                  onClick={async () => {
+                    try {
+                      const response = await apiRequest("POST", "/api/create-lifetime-payment", { amount: 99 });
+                      if (response.ok) {
+                        const data = await response.json();
+                        if (data.checkoutUrl) {
+                          window.location.href = data.checkoutUrl;
+                        }
+                      } else {
+                        const errorData = await response.json();
+                        console.error("Erreur API:", errorData.error?.message || errorData.message);
+                      }
+                    } catch (error) {
+                      console.error("Erreur création paiement à vie:", error);
+                    }
+                  }}
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Obtenir l'accès à vie
+                </Button>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  ⚡ Offre limitée aux 50 premiers clients
+                </p>
               </CardContent>
             </Card>
           </div>
