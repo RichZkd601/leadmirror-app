@@ -6,12 +6,13 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const defaultSessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const extendedSessionTtl = 30 * 24 * 60 * 60 * 1000; // 30 days
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: false,
-    ttl: sessionTtl,
+    ttl: extendedSessionTtl, // Use extended TTL for store
     tableName: "sessions",
   });
   return session({
@@ -22,7 +23,7 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: false, // Set to false for development
-      maxAge: sessionTtl,
+      maxAge: defaultSessionTtl, // Default to 1 week, can be overridden
     },
   });
 }

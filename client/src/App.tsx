@@ -30,21 +30,20 @@ function Router() {
           <Route path="/" component={Landing} />
           <Route path="/auth" component={Auth} />
           <Route path="/lifetime-offer" component={LifetimeOffer} />
-          <Route path="/dashboard" component={Auth} />
-          <Route path="/audio-analysis" component={Auth} />
-          <Route path="/subscribe" component={Auth} />
-          <Route path="/analytics" component={Auth} />
-
-          <Route path="/profile" component={Auth} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/audio-analysis" component={AudioAnalysis} />
+          <Route path="/subscribe" component={Subscribe} />
+          <Route path="/analytics" component={Analytics} />
+          <Route path="/profile" component={Profile} />
           <Route path="/*" component={NotFound} />
         </>
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/audio-analysis" component={AudioAnalysis} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/analytics" component={Analytics} />
-
           <Route path="/profile" component={Profile} />
           <Route path="/*" component={NotFound} />
         </>

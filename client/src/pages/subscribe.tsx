@@ -88,6 +88,23 @@ export default function Subscribe() {
   const [clientSecret, setClientSecret] = useState("");
   const [remainingSpots, setRemainingSpots] = useState(50);
 
+  // Handle payment cancellation return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+
+    if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Paiement annulé",
+        description: "Vous pouvez réessayer quand vous le souhaitez.",
+        variant: "destructive",
+      });
+      
+      // Clean URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
+
   // Simuler le décompte des places restantes
   useEffect(() => {
     const interval = setInterval(() => {

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -15,6 +16,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 const loginSchema = z.object({
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
+  rememberMe: z.boolean().optional(),
 });
 
 const registerSchema = z.object({
@@ -22,6 +24,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
   firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -36,6 +39,7 @@ export default function Auth() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -46,6 +50,7 @@ export default function Auth() {
       password: "",
       firstName: "",
       lastName: "",
+      rememberMe: false,
     },
   });
 
@@ -146,6 +151,25 @@ export default function Auth() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={loginForm.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            Rester connecté
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                   <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
                     {loginMutation.isPending ? (
                       <LoadingSpinner size="sm" />
@@ -211,6 +235,25 @@ export default function Auth() {
                           <Input {...field} type="password" placeholder="••••••••" />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            Rester connecté
+                          </FormLabel>
+                        </div>
                       </FormItem>
                     )}
                   />

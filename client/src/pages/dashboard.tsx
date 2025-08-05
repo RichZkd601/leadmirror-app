@@ -149,6 +149,52 @@ export default function Dashboard() {
   const [showHistory, setShowHistory] = useState(false);
   const [showPricing, setShowPricing] = useState(false); 
   const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Check if returning from payment
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
+  const isReturningFromPayment = paymentStatus === 'success';
+
+  // Handle payment return parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const paymentType = urlParams.get('type');
+
+    if (paymentStatus === 'success') {
+      if (paymentType === 'lifetime') {
+        toast({
+          title: "🎉 Paiement à vie réussi !",
+          description: "Vous avez maintenant un accès à vie à LeadMirror Premium !",
+        });
+      } else if (paymentType === 'subscription') {
+        toast({
+          title: "🎉 Abonnement activé !",
+          description: "Votre abonnement mensuel a été activé avec succès !",
+        });
+      } else {
+        toast({
+          title: "🎉 Paiement réussi !",
+          description: "Votre accès premium a été activé !",
+        });
+      }
+      
+      // Refresh user data to get updated premium status
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Clean URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Paiement annulé",
+        description: "Vous pouvez réessayer quand vous le souhaitez.",
+        variant: "destructive",
+      });
+      
+      // Clean URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -174,9 +220,9 @@ export default function Dashboard() {
     },
   });
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (but allow dashboard display for payment returns)
   useEffect(() => {
-    if (!userLoading && !user) {
+    if (!userLoading && !user && !isReturningFromPayment) {
       toast({
         title: "Non autorisé",
         description: "Vous êtes déconnecté. Reconnexion en cours...",
@@ -187,7 +233,7 @@ export default function Dashboard() {
       }, 500);
       return;
     }
-  }, [user, userLoading, toast]);
+  }, [user, userLoading, toast, isReturningFromPayment]);
 
   // Show onboarding for new users
   useEffect(() => {
@@ -198,6 +244,20 @@ export default function Dashboard() {
       }
     }
   }, [user, currentAnalysis]);
+
+  // Show payment success message if returning from payment
+  useEffect(() => {
+    if (isReturningFromPayment && !user) {
+      toast({
+        title: "🎉 Paiement réussi !",
+        description: "Votre paiement a été traité. Veuillez vous reconnecter pour accéder à votre compte premium.",
+        variant: "default",
+      });
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 3000);
+    }
+  }, [isReturningFromPayment, user, toast]);
 
   // Fetch user analyses
   const { data: analyses = [], isLoading: analysesLoading } = useQuery<Analysis[]>({

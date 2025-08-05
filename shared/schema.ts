@@ -29,7 +29,7 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
-  password: varchar("password"), // Added for email/password auth
+  password: varchar("password_hash"), // Match existing database column
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -51,7 +51,7 @@ export const analyses = pgTable("analyses", {
   inputText: text("input_text").notNull(),
   
   // Audio analysis fields
-  audioFilePath: varchar("audio_file_path"), // Path to uploaded audio file
+  audioFilePath: varchar("audio_file_path").notNull().default(""), // Path to uploaded audio file
   transcriptionText: text("transcription_text"), // Whisper transcription result
   audioProcessingStatus: varchar("audio_processing_status").default("none"), // none, processing, completed, failed
   audioDurationMinutes: integer("audio_duration_minutes"), // Duration in minutes

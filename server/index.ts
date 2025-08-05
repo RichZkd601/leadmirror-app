@@ -39,9 +39,12 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Enhanced error handler
+  // Enhanced error handler with performance optimization
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Error handler caught:', err);
+    // Only log errors in development or if they're not 404s
+    if (process.env.NODE_ENV === 'development' || (err.status !== 404 && err.statusCode !== 404)) {
+      console.error('Error handler caught:', err);
+    }
     
     const status = err.status || err.statusCode || 500;
     let message = err.message || "Internal Server Error";
@@ -58,7 +61,9 @@ app.use((req, res, next) => {
     } else if (status >= 500) {
       message = 'Erreur temporaire du serveur. Veuillez réessayer.';
       // Log detailed error but don't expose to client
-      console.error('Server error details:', err.stack);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Server error details:', err.stack);
+      }
     }
 
     res.status(status).json({ 
@@ -88,8 +93,7 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "127.0.0.1",
   }, () => {
     log(`serving on port ${port}`);
   });
