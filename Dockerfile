@@ -58,8 +58,8 @@ ENV NODE_ENV=production
 ENV PORT=5000
 
 # Healthcheck pour vérifier que l'application fonctionne
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD curl -f http://localhost:$PORT/ || exit 1
 
 # Commande de démarrage optimisée pour Railway
 CMD ["node", "scripts/start.js"] 

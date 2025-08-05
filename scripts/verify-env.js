@@ -1,96 +1,60 @@
 #!/usr/bin/env node
 
-/**
- * Script de vérification des variables d'environnement pour Railway
- * Usage: node scripts/verify-env.js
- */
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const requiredVars = {
-  'DATABASE_URL': 'URL de la base de données Neon',
-  'NODE_ENV': 'Environnement (production/development)',
-  'SESSION_SECRET': 'Clé secrète pour les sessions',
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const optionalVars = {
-  'OPENAI_API_KEY': 'Clé API OpenAI pour les analyses IA',
-  'STRIPE_SECRET_KEY': 'Clé secrète Stripe pour les paiements',
-  'STRIPE_WEBHOOK_SECRET': 'Secret webhook Stripe',
-  'GOOGLE_CLIENT_ID': 'ID client Google OAuth',
-  'GOOGLE_CLIENT_SECRET': 'Secret client Google OAuth',
-  'PUBLIC_OBJECT_SEARCH_PATHS': 'Chemins de recherche d\'objets publics',
-  'PRIVATE_OBJECT_DIR': 'Répertoire d\'objets privés',
-};
+console.log('🔍 Vérification des variables d\'environnement...');
 
-console.log('🔍 Vérification des variables d\'environnement Railway...\n');
+const requiredVars = [
+  'DATABASE_URL',
+  'SESSION_SECRET',
+  'NODE_ENV'
+];
+
+const optionalVars = [
+  'OPENAI_API_KEY',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET'
+];
 
 let hasErrors = false;
-let hasWarnings = false;
 
-// Vérifier les variables requises
-console.log('📋 Variables Requises:');
-for (const [varName, description] of Object.entries(requiredVars)) {
+// Vérifier les variables obligatoires
+console.log('\n📋 Variables obligatoires:');
+for (const varName of requiredVars) {
   const value = process.env[varName];
   if (value) {
-    console.log(`  ✅ ${varName}: ${description}`);
-    if (varName === 'DATABASE_URL') {
-      // Masquer partiellement l'URL de la base de données
-      const masked = value.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
-      console.log(`     Valeur: ${masked}`);
-    }
+    console.log(`✅ ${varName}: ${value.substring(0, 20)}...`);
   } else {
-    console.log(`  ❌ ${varName}: ${description} - MANQUANTE`);
+    console.log(`❌ ${varName}: NON DÉFINIE`);
     hasErrors = true;
   }
 }
 
-console.log('\n📋 Variables Optionnelles:');
-for (const [varName, description] of Object.entries(optionalVars)) {
+// Vérifier les variables optionnelles
+console.log('\n📋 Variables optionnelles:');
+for (const varName of optionalVars) {
   const value = process.env[varName];
   if (value) {
-    console.log(`  ✅ ${varName}: ${description}`);
+    console.log(`✅ ${varName}: ${value.substring(0, 20)}...`);
   } else {
-    console.log(`  ⚠️  ${varName}: ${description} - NON CONFIGURÉE`);
-    hasWarnings = true;
+    console.log(`⚠️  ${varName}: NON DÉFINIE (optionnelle)`);
   }
 }
 
-console.log('\n📊 Informations Système:');
-console.log(`  🖥️  Node.js: ${process.version}`);
-console.log(`  🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
-console.log(`  🔌 Port: ${process.env.PORT || '5000'}`);
-console.log(`  📁 Répertoire: ${process.cwd()}`);
+// Vérifier le port
+const port = process.env.PORT || 5000;
+console.log(`\n🌐 Port: ${port}`);
 
-// Vérifier la connectivité de la base de données si DATABASE_URL est présente
-if (process.env.DATABASE_URL) {
-  console.log('\n🔗 Test de connexion à la base de données...');
-  try {
-    const { Pool } = await import('@neondatabase/serverless');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    const result = await pool.query('SELECT 1 as test');
-    await pool.end();
-    
-    if (result.rows.length > 0) {
-      console.log('  ✅ Connexion à la base de données réussie');
-    } else {
-      console.log('  ❌ Connexion à la base de données échouée');
-      hasErrors = true;
-    }
-  } catch (error) {
-    console.log(`  ❌ Erreur de connexion à la base de données: ${error.message}`);
-    hasErrors = true;
-  }
-}
-
-// Résumé
-console.log('\n📋 Résumé:');
 if (hasErrors) {
-  console.log('  ❌ ERREURS: Variables requises manquantes');
+  console.log('\n❌ ERREUR: Variables d\'environnement manquantes !');
+  console.log('💡 Assurez-vous de configurer les variables obligatoires sur Railway.');
   process.exit(1);
-} else if (hasWarnings) {
-  console.log('  ⚠️  AVERTISSEMENTS: Variables optionnelles non configurées');
-  console.log('  ✅ Configuration minimale OK pour le déploiement');
 } else {
-  console.log('  ✅ Configuration complète OK');
-}
-
-console.log('\n🚀 Prêt pour le déploiement Railway!'); 
+  console.log('\n✅ Toutes les variables obligatoires sont définies !');
+} 

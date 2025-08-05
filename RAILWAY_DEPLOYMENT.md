@@ -1,73 +1,100 @@
-# 🚀 Guide de Déploiement Railway - LeadMirror
+# 🚂 Guide de Déploiement Railway - LeadMirror
 
-## Configuration Optimisée
+## 📋 Variables d'Environnement Requises
 
-Votre application est maintenant configurée pour un déploiement optimal sur Railway avec les améliorations suivantes :
+Pour que l'application fonctionne correctement sur Railway, vous devez configurer les variables d'environnement suivantes :
 
-### ✅ Problèmes Résolus
+### 🔑 Variables Obligatoires
 
-1. **Conflit de builders** : Suppression du Dockerfile pour utiliser uniquement nixpacks
-2. **Erreurs npm** : Script de build amélioré avec fallback
-3. **Configuration unifiée** : Utilisation exclusive de `railway.toml`
-4. **Optimisation des performances** : Cache npm nettoyé et dépendances optimisées
+1. **DATABASE_URL**
+   - URL de connexion à votre base de données PostgreSQL
+   - Format : `postgresql://username:password@host:port/database`
+   - Exemple : `postgresql://user:pass@host.neon.tech/leadmirror`
 
-### 📁 Fichiers de Configuration
+2. **SESSION_SECRET**
+   - Clé secrète pour chiffrer les sessions utilisateur
+   - Doit être une chaîne aléatoire de 32+ caractères
+   - Exemple : `your-super-secret-session-key-change-this-123`
 
-- `railway.toml` : Configuration principale Railway
-- `nixpacks.toml` : Configuration de build optimisée
-- `railway-build.sh` : Script de build robuste
-- `.railwayignore` : Exclusion des fichiers inutiles
+3. **NODE_ENV**
+   - Environnement de l'application
+   - Valeur : `production`
 
-### 🔧 Variables d'Environnement Requises
+### 🔧 Variables Optionnelles
 
-Configurez ces variables dans votre projet Railway :
+4. **OPENAI_API_KEY**
+   - Clé API OpenAI pour les analyses audio IA
+   - Format : `sk-...`
 
-```bash
+5. **STRIPE_SECRET_KEY**
+   - Clé secrète Stripe pour les paiements
+   - Format : `sk_test_...` ou `sk_live_...`
+
+6. **STRIPE_WEBHOOK_SECRET**
+   - Secret webhook Stripe
+   - Format : `whsec_...`
+
+7. **GOOGLE_CLIENT_ID**
+   - ID client Google OAuth
+   - Format : `123456789-abcdef.apps.googleusercontent.com`
+
+8. **GOOGLE_CLIENT_SECRET**
+   - Secret client Google OAuth
+
+## 🛠️ Configuration sur Railway
+
+### Étape 1 : Accéder aux Variables d'Environnement
+
+1. Connectez-vous à votre dashboard Railway
+2. Sélectionnez votre projet "leadmirror-app"
+3. Allez dans l'onglet "Variables"
+
+### Étape 2 : Ajouter les Variables
+
+Ajoutez chaque variable avec sa valeur :
+
+```
+DATABASE_URL=postgresql://your-database-url
+SESSION_SECRET=your-super-secret-key-here
 NODE_ENV=production
-DATABASE_URL=your-database-url
-OPENAI_API_KEY=your-openai-api-key
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-SESSION_SECRET=your-super-secret-session-key
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
+OPENAI_API_KEY=sk-your-openai-key
+STRIPE_SECRET_KEY=sk_test_your-stripe-key
 ```
 
-### 🧪 Test Local
+### Étape 3 : Redéployer
 
-Avant de déployer, testez le build localement :
+1. Sauvegardez les variables
+2. Railway redéploiera automatiquement l'application
+3. Surveillez les logs pour vérifier le succès
 
-```bash
-npm run test-railway
-```
+## 🔍 Diagnostic des Problèmes
 
-### 🚀 Déploiement
+### Erreur "DATABASE_URL must be set"
+- **Cause** : Variable DATABASE_URL non configurée
+- **Solution** : Ajouter la variable dans Railway
 
-1. **Connectez votre repository** à Railway
-2. **Configurez les variables d'environnement** dans l'interface Railway
-3. **Déployez automatiquement** - Railway détectera la configuration
+### Erreur "Healthcheck failed"
+- **Cause** : Application ne démarre pas à cause des variables manquantes
+- **Solution** : Configurer toutes les variables obligatoires
 
-### 📊 Monitoring
+### Erreur "Endpoint API introuvable"
+- **Cause** : Application ne répond pas sur le port configuré
+- **Solution** : Vérifier que l'application démarre correctement
 
-- **Healthcheck** : `/api/health`
-- **Logs** : Accessibles dans l'interface Railway
-- **Restart Policy** : Automatique en cas d'échec
+## 📊 Vérification
 
-### 🔍 Dépannage
+Après configuration, l'application devrait :
 
-Si vous rencontrez des erreurs :
+1. ✅ Démarrer sans erreur
+2. ✅ Répondre aux healthchecks
+3. ✅ Être accessible via l'URL Railway
+4. ✅ Afficher la page d'accueil
 
-1. **Vérifiez les variables d'environnement**
-2. **Consultez les logs Railway**
-3. **Testez localement** avec `npm run test-railway`
-4. **Vérifiez la connectivité** de votre base de données
+## 🆘 Support
 
-### 🎯 Avantages de cette Configuration
+Si vous rencontrez des problèmes :
 
-- ✅ **Build plus rapide** avec nixpacks
-- ✅ **Gestion d'erreurs robuste** dans le script de build
-- ✅ **Cache optimisé** pour éviter les problèmes npm
-- ✅ **Configuration unifiée** sans conflits
-- ✅ **Monitoring intégré** avec healthchecks
-
-Votre application est maintenant prête pour un déploiement stable sur Railway ! 🎉 
+1. Vérifiez les logs Railway
+2. Assurez-vous que toutes les variables sont configurées
+3. Testez localement avec un fichier `.env`
+4. Contactez le support si nécessaire 

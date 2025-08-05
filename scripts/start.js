@@ -10,6 +10,26 @@ const __dirname = path.dirname(__filename);
 
 console.log('🚀 Démarrage de LeadMirror...');
 
+// Vérifier les variables d'environnement critiques
+console.log('🔍 Vérification des variables d\'environnement...');
+const requiredVars = ['DATABASE_URL', 'SESSION_SECRET', 'NODE_ENV'];
+let missingVars = [];
+
+for (const varName of requiredVars) {
+  if (!process.env[varName]) {
+    missingVars.push(varName);
+  }
+}
+
+if (missingVars.length > 0) {
+  console.log('❌ Variables d\'environnement manquantes:', missingVars.join(', '));
+  console.log('💡 Configurez ces variables sur Railway pour que l\'application fonctionne.');
+  console.log('🛑 Arrêt de l\'application...');
+  process.exit(1);
+}
+
+console.log('✅ Variables d\'environnement OK');
+
 // Vérifier si le build existe
 const distPath = path.join(process.cwd(), 'dist', 'index.js');
 const hasBuild = fs.existsSync(distPath);
