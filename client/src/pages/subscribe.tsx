@@ -13,12 +13,22 @@ import { CheckCircle, Users, TrendingUp, Clock, Star } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import Footer from "@/components/Footer";
 
+// Types pour les variables d'environnement
+interface ImportMetaEnv {
+  readonly VITE_STRIPE_PUBLIC_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+if (!stripePublicKey) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(stripePublicKey);
 
 const SubscribeForm = () => {
   const stripe = useStripe();

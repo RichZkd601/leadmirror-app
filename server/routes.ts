@@ -1031,14 +1031,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`💳 Création session d'abonnement pour l'utilisateur: ${userId}`);
 
       // Create or get customer
-      let customerId = user.stripeCustomerId;
+      let customerId: string | null = user.stripeCustomerId || null;
       if (!customerId) {
         const customer = await stripe?.customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
           metadata: { userId: userId }
         });
-        customerId = customer?.id;
+        customerId = customer?.id || null;
         console.log(`👤 Client Stripe créé: ${customerId}`);
       }
 
@@ -1052,26 +1052,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      console.log(`�� Prix créé: ${price?.id}`);
+      console.log(`💰 Prix créé: ${price?.id}`);
 
-              // Create Checkout Session
-        const session = await stripe?.checkout.sessions.create({
-          customer: customerId,
-          payment_method_types: ['card'],
-          line_items: [{
-            price: price?.id,
-            quantity: 1,
-          }],
-          mode: 'subscription',
-          success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success&type=subscription`,
-          cancel_url: `${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`,
-          client_reference_id: userId,
-          metadata: { 
-            userId: userId,
-            type: 'subscription',
-            offer_type: 'subscription'
-          }
-        });
+      // Create Checkout Session
+      const session = await stripe?.checkout.sessions.create({
+        customer: customerId || undefined,
+        payment_method_types: ['card'],
+        line_items: [{
+          price: price?.id,
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success&type=subscription`,
+        cancel_url: `${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`,
+        client_reference_id: userId,
+        metadata: { 
+          userId: userId,
+          type: 'subscription',
+          offer_type: 'subscription'
+        }
+      });
 
       console.log(`✅ Session d'abonnement créée: ${session?.id}`);
       console.log(`🔗 URLs de retour:`);
@@ -1090,13 +1090,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe webhook for subscription status updates
   app.post('/api/stripe-webhook', async (req, res) => {
     const sig = req.headers['stripe-signature'];
-    let event;
+    let event: any;
 
     try {
       event = stripe?.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
     } catch (err: any) {
       console.log(`❌ Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (!event) {
+      console.log(`❌ Événement webhook invalide`);
+      return res.status(400).send(`Webhook Error: Invalid event`);
     }
 
     console.log(`🔔 Webhook reçu: ${event.type}`);
@@ -1187,7 +1192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error(`❌ Erreur lors du traitement du webhook ${event.type}:`, error);
-        }
+    }
 
     res.json({ received: true });
   });
