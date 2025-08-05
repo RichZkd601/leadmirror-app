@@ -37,7 +37,8 @@ import {
   Settings,
   Download,
   FileAudio,
-  Mic
+  Mic,
+  Star
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -341,15 +342,6 @@ export default function Dashboard() {
                 >
                   <Target className="w-4 h-4 mr-1" />
                   Analytics
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => window.location.href = "/integrations"}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Settings className="w-4 h-4 mr-1" />
-                  Intégrations
                 </Button>
                 <span className="text-sm text-muted-foreground">
                   Analyses utilisées : <span className="font-medium">{user.monthlyAnalysesUsed || 0}</span>
