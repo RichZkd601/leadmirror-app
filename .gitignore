@@ -117,3 +117,4 @@ Thumbs.db
 # Uploads
 uploads/
 temp/
+node_modules
