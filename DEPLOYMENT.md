@@ -14,14 +14,14 @@ Dans votre dashboard Vercel, ajoutez ces variables :
 
 ```bash
 # Base de données
-DATABASE_URL=postgresql://neondb_owner:npg_Fv2f7siWeHOQ@ep-autumn-heart-abmpmnhk-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://votre_utilisateur:votre_mot_de_passe@votre_host/votre_database?sslmode=require
 
 # OpenAI
-OPENAI_API_KEY=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
+OPENAI_API_KEY=sk-votre_clé_openai_ici
 
 # Stripe
-STRIPE_SECRET_KEY=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
-VITE_STRIPE_PUBLIC_KEY=pk_live_51RrCDDF1s37tn7hIkrZF8MiKBNHWgoyR8mBa25TZevpJKnnUfHDQs411BpFuGZjc4hzLdgrPrzXmvCXsb6tvbceO00JF2AY2Iu
+STRIPE_SECRET_KEY=sk_live_votre_clé_stripe_ici
+VITE_STRIPE_PUBLIC_KEY=pk_live_votre_clé_publique_stripe_ici
 
 # Sessions
 SESSION_SECRET=votre_secret_de_session_ici
