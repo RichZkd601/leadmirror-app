@@ -771,16 +771,7 @@ Sarah"
                         <Copy className="w-4 h-4 mr-2" />
                         Copier le message complet
                       </Button>
-                      {user?.isPremium && (
-                        <Button 
-                          variant="outline"
-                          onClick={() => window.location.href = "/integrations"}
-                          className="flex-1"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Exporter CRM
-                        </Button>
-                      )}
+
                     </div>
                   </CardContent>
                 </Card>

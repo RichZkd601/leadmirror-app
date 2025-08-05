@@ -10,7 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import AudioAnalysis from "@/pages/audio-analysis";
 import Subscribe from "@/pages/subscribe";
 import Analytics from "@/pages/analytics";
-import Integrations from "@/pages/integrations";
+
 import Security from "@/pages/security";
 import Profile from "@/pages/profile";
 import Auth from "@/pages/auth";
@@ -34,7 +34,7 @@ function Router() {
           <Route path="/audio-analysis" component={Auth} />
           <Route path="/subscribe" component={Auth} />
           <Route path="/analytics" component={Auth} />
-          <Route path="/integrations" component={Auth} />
+
           <Route path="/profile" component={Auth} />
           <Route path="/*" component={NotFound} />
         </>
@@ -44,7 +44,7 @@ function Router() {
           <Route path="/audio-analysis" component={AudioAnalysis} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/analytics" component={Analytics} />
-          <Route path="/integrations" component={Integrations} />
+
           <Route path="/profile" component={Profile} />
           <Route path="/*" component={NotFound} />
         </>
