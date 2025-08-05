@@ -38,6 +38,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Simple auth system with email/password
   app.use(getSession());
 
+  // Health check route for Railway
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
+  // Root route for Railway healthcheck
+  app.get('/', (req, res) => {
+    res.json({ 
+      message: 'LeadMirror API is running',
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Simple authentication middleware
   const isAuthenticated = (req: any, res: any, next: any) => {
     if (req.session && req.session.userId) {

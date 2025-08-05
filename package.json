@@ -21,6 +21,7 @@
     "railway-deploy": "npm run test-build && npm run verify-env",
     "test-railway": "node scripts/test-railway-build.js",
     "test-docker": "node scripts/test-docker-build.js",
+    "test-startup": "node scripts/test-startup.js",
     "setup-permissions": "node scripts/setup-permissions.js",
     "verify-docker": "node scripts/verify-docker-setup.js"
   },
