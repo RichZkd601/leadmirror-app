@@ -484,10 +484,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 2: Enhanced AI conversation analysis
       const analysisResult = await analyzeAudioConversation(audioResult.transcription.text, {
         duration: audioResult.transcription.duration,
-        fileSize: audioResult.audioMetadata.fileSize,
-        confidence: audioResult.transcription.confidence,
-        qualityScore: audioResult.audioMetadata.qualityScore,
-        audioMetadata: audioResult.audioMetadata
+        fileSize: req.file.size,
+        // qualityScore: audioResult.audioMetadata.qualityScore,
+        // audioMetadata: audioResult.audioMetadata
       });
 
       // Step 3: Advanced insights generation
@@ -501,13 +500,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Step 5: Save comprehensive analysis to database
       const analysis = await storage.createAnalysis({
         userId: userId,
-        title: title || `Analyse Révolutionnaire - ${audioResult.audioMetadata.fileName}`,
+        title: title || `Analyse Révolutionnaire - ${req.file.originalname}`,
         inputText: audioResult.transcription.text,
         audioFilePath: "revolutionary-direct-upload",
         transcriptionText: audioResult.transcription.text,
         audioProcessingStatus: "completed",
         audioDurationMinutes: Math.round(audioResult.transcription.duration / 60),
-        audioFileSize: audioResult.audioMetadata.fileSize,
+        audioFileSize: req.file.size,
         interestLevel: analysisResult.interestLevel,
         interestJustification: analysisResult.interestJustification,
         confidenceScore: analysisResult.confidenceScore,
@@ -574,8 +573,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             analysisTime: Date.now() - startTime - audioResult.processingStats.totalTime
           },
           uploadMetadata: {
-            originalName: audioResult.audioMetadata.fileName,
-            fileSize: audioResult.audioMetadata.fileSize,
+            originalName: req.file.originalname,
+            fileSize: req.file.size,
             format: audioResult.audioMetadata.format
           },
           aiAnalysisMetadata: {
@@ -663,16 +662,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analysisResult = await analyzeAudioConversation(transcriptionText, {
         duration,
         fileSize,
-        confidence: 0.95, // High confidence for complete transcriptions
-        qualityScore: 0.9, // Assume good quality for existing transcriptions
-        audioMetadata: {
-          duration,
-          sampleRate: 44100,
-          channels: 2,
-          bitrate: 128000,
-          format: fileName?.split('.').pop() || 'mp3',
-          codec: 'unknown'
-        }
+        // confidence: 0.95, // High confidence for complete transcriptions
+        // qualityScore: 0.9, // Assume good quality for existing transcriptions
+        // audioMetadata: {
+        //   duration,
+        //   sampleRate: 44100,
+        //   channels: 2,
+        //   bitrate: 128000,
+        //   format: fileName?.split('.').pop() || 'mp3',
+        //   codec: 'unknown'
+        // }
       });
       
       console.log(`✅ Analyse IA terminée: ${Date.now() - startProcessingTime}ms`);
@@ -1073,22 +1072,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case 'invoice.payment_succeeded':
           const invoice = event.data.object;
-          console.log(`💰 Paiement d'invoice réussi: ${invoice.subscription}`);
-          if (invoice.subscription) {
-            const user = await storage.getUserByStripeSubscriptionId(invoice.subscription);
+          console.log(`💰 Paiement d'invoice réussi: ${invoice.id}`);
+          const subscriptionId = (invoice as any).subscription as string | undefined;
+          if (subscriptionId) {
+            const user = await storage.getUserByStripeSubscriptionId(subscriptionId);
             if (user) {
               await storage.updateUserPremiumStatus(user.id, true);
               console.log(`✅ Accès premium renouvelé pour l'utilisateur: ${user.id} (${user.email})`);
             } else {
-              console.log(`⚠️ Utilisateur non trouvé pour l'invoice: ${invoice.subscription}`);
+              console.log(`⚠️ Utilisateur non trouvé pour l'invoice: ${subscriptionId}`);
             }
           }
           break;
         case 'invoice.payment_failed':
           const failedInvoice = event.data.object;
-          console.log(`❌ Paiement d'invoice échoué: ${failedInvoice.subscription}`);
-          if (failedInvoice.subscription) {
-            const user = await storage.getUserByStripeSubscriptionId(failedInvoice.subscription);
+          console.log(`❌ Paiement d'invoice échoué: ${failedInvoice.id}`);
+          const failedSubscriptionId = (failedInvoice as any).subscription as string | undefined;
+          if (failedSubscriptionId) {
+            const user = await storage.getUserByStripeSubscriptionId(failedSubscriptionId);
             if (user) {
               await storage.updateUserPremiumStatus(user.id, false);
               console.log(`❌ Accès premium désactivé pour l'utilisateur: ${user.id} (${user.email})`);

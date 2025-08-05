@@ -178,6 +178,8 @@ export default function AudioAnalysis() {
     }
   };
 
+  const safeUser = user ?? { isPremium: false, monthlyAnalysesUsed: 0 };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -317,15 +319,15 @@ export default function AudioAnalysis() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Fichier</p>
-                        <p className="font-medium">{audioMetadata.fileName}</p>
+                        <p className="font-medium">{audioMetadata?.fileName || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Durée</p>
-                        <p className="font-medium">{formatDuration(audioMetadata.duration)}</p>
+                        <p className="font-medium">{formatDuration(audioMetadata!.duration)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Taille</p>
-                        <p className="font-medium">{formatFileSize(audioMetadata.fileSize)}</p>
+                        <p className="font-medium">{formatFileSize(audioMetadata!.fileSize)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Statut</p>
@@ -340,7 +342,12 @@ export default function AudioAnalysis() {
 
                 <Button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || isTranscribing || !transcription || (user && !user.isPremium && (user.monthlyAnalysesUsed || 0) >= 3)}
+                  disabled={
+                    isAnalyzing ||
+                    isTranscribing ||
+                    !transcription ||
+                    (!safeUser.isPremium && (safeUser.monthlyAnalysesUsed ?? 0) >= 3)
+                  }
                   className="w-full"
                   size="lg"
                 >
