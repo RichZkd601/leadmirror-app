@@ -6,14 +6,18 @@ import { createHash } from "crypto";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY environment variable is required");
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ OPENAI_API_KEY non définie - Les fonctionnalités IA seront désactivées');
+  } else {
+    throw new Error("OPENAI_API_KEY environment variable is required");
+  }
 }
 
-const openai = new OpenAI({ 
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY,
   timeout: 60000, // 60 seconds timeout for robust processing
   maxRetries: 3, // Auto-retry on failure
-});
+}) : null;
 
 // Advanced audio processing utilities
 class AudioProcessor {
@@ -189,6 +193,10 @@ export async function analyzeConversation(conversationText: string): Promise<Ana
     confidenceFactors: string[];
   };
 }> {
+  if (!openai) {
+    throw new Error("OpenAI API non configurée - Impossible d'analyser la conversation");
+  }
+
   const startTime = Date.now();
   
   try {
@@ -334,7 +342,7 @@ Structure JSON EXACTE obligatoire :
     ⚡ MISSION: Produire l'analyse commerciale la plus précise et actionable possible.
     RÉPONSE: JSON valide UNIQUEMENT, structure EXACTE requise, ZÉRO texte externe.`;
 
-    const response = await openai.chat.completions.create({
+    const response = await openai?.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -354,7 +362,7 @@ Structure JSON EXACTE obligatoire :
       presence_penalty: 0.1, // Encourage diverse insights
     });
 
-    const rawContent = response.choices[0].message.content;
+    const rawContent = response?.choices[0].message.content;
     if (!rawContent) {
       throw new Error("Réponse vide de l'IA");
     }
@@ -446,6 +454,10 @@ export async function transcribeAudio(audioFilePath: string): Promise<{
     transcriptionMethod: string;
   };
 }> {
+  if (!openai) {
+    throw new Error("OpenAI API non configurée - Impossible de transcrire l'audio");
+  }
+
   const startTime = Date.now();
   
   try {
@@ -556,7 +568,7 @@ async function performTranscription(filePath: string, options: {
 }): Promise<any> {
   const audioReadStream = fs.createReadStream(filePath);
   
-  return await openai.audio.transcriptions.create({
+  return await openai?.audio.transcriptions.create({
     file: audioReadStream,
     model: "whisper-1",
     ...options,
@@ -675,6 +687,10 @@ export async function analyzeAudioConversation(
     audioQualityNotes: string[];
   };
 }> {
+  if (!openai) {
+    throw new Error("OpenAI API non configurée - Impossible d'analyser l'audio");
+  }
+
   try {
     const enhancedPrompt = `Tu es le meilleur expert mondial en psychologie commerciale, analyse comportementale et stratégie de vente. Tu combines l'expertise de Grant Cardone, Jordan Belfort, et Daniel Kahneman.
 
@@ -772,7 +788,7 @@ Structure JSON EXACTE obligatoire (inclut audioInsights) :
   }
 }`;
 
-    const response = await openai.chat.completions.create({
+    const response = await openai?.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -789,7 +805,7 @@ Structure JSON EXACTE obligatoire (inclut audioInsights) :
       max_tokens: 4500, // Increased for audio insights
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(response?.choices[0].message.content || "{}");
     
     // Enhanced validation for audio analysis
     const requiredFields = [

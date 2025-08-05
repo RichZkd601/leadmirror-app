@@ -13,10 +13,14 @@ import fs from "fs";
 import { insertAnalysisSchema } from "@shared/schema";
 
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ STRIPE_SECRET_KEY non définie - Les fonctionnalités de paiement seront désactivées');
+  } else {
+    throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+  }
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // Middleware wrapper for async route handlers to catch errors
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
@@ -909,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`💳 Création session de paiement à vie pour l'utilisateur: ${userId}`);
 
               // Créer une session Stripe Checkout pour l'offre à vie
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripe?.checkout.sessions.create({
           payment_method_types: ['card'],
           line_items: [
             {
@@ -938,16 +942,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         });
 
-      console.log(`✅ Session de paiement créée: ${session.id}`);
+      console.log(`✅ Session de paiement créée: ${session?.id}`);
       console.log(`🔗 URLs de retour:`);
       console.log(`   Success: ${req.protocol}://${req.get('host')}/dashboard?payment=success&type=lifetime`);
       console.log(`   Cancel: ${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`);
-      res.json({ checkoutUrl: session.url });
+      res.json({ checkoutUrl: session?.url });
     } catch (error: any) {
       console.error("❌ Erreur création paiement:", error);
       res.status(500).json({ message: "Erreur lors de la création du paiement: " + error.message });
     }
   });
+
+  // Stripe routes - Create lifetime offer checkout session
+  app.post('/api/stripe/create-lifetime-session', isAuthenticated, asyncHandler(async (req: any, res: any) => {
+    if (!stripe) {
+      return res.status(503).json({ message: "Paiements non configurés" });
+    }
+
+    try {
+      const userId = (req as any).session.userId;
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      // Créer une session Stripe Checkout pour l'offre à vie
+      const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: 'LeadMirror - Accès à Vie',
+                  description: 'Accès illimité à vie à toutes les fonctionnalités premium de LeadMirror',
+                  images: ['https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400'],
+                },
+                unit_amount: 9900, // 99€ en centimes
+              },
+              quantity: 1,
+            },
+          ],
+          mode: 'payment',
+          success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success&type=lifetime`,
+          cancel_url: `${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`,
+          client_reference_id: userId,
+          customer_email: user.email || undefined,
+          metadata: {
+            userId: userId,
+            offer_type: 'lifetime',
+            type: 'lifetime',
+            payment_type: 'lifetime'
+          },
+        });
+
+      console.log(`✅ Session de paiement créée: ${session?.id}`);
+      console.log(`🔗 URLs de retour:`);
+      console.log(`   Success: ${req.protocol}://${req.get('host')}/dashboard?payment=success&type=lifetime`);
+      console.log(`   Cancel: ${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`);
+      res.json({ checkoutUrl: session?.url });
+    } catch (error: any) {
+      console.error("❌ Erreur création paiement:", error);
+      res.status(500).json({ message: "Erreur lors de la création du paiement: " + error.message });
+    }
+  }));
 
   // Stripe subscription routes - Create Checkout Session
   app.post('/api/create-subscription', isAuthenticated, async (req: any, res) => {
@@ -975,17 +1033,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create or get customer
       let customerId = user.stripeCustomerId;
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripe?.customers.create({
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
           metadata: { userId: userId }
         });
-        customerId = customer.id;
+        customerId = customer?.id;
         console.log(`👤 Client Stripe créé: ${customerId}`);
       }
 
       // Create price for €15/month
-      const price = await stripe.prices.create({
+      const price = await stripe?.prices.create({
         unit_amount: 1500, // €15.00 in cents
         currency: 'eur',
         recurring: { interval: 'month' },
@@ -994,14 +1052,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      console.log(`💰 Prix créé: ${price.id}`);
+      console.log(`�� Prix créé: ${price?.id}`);
 
               // Create Checkout Session
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripe?.checkout.sessions.create({
           customer: customerId,
           payment_method_types: ['card'],
           line_items: [{
-            price: price.id,
+            price: price?.id,
             quantity: 1,
           }],
           mode: 'subscription',
@@ -1015,13 +1073,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
 
-      console.log(`✅ Session d'abonnement créée: ${session.id}`);
+      console.log(`✅ Session d'abonnement créée: ${session?.id}`);
       console.log(`🔗 URLs de retour:`);
       console.log(`   Success: ${req.protocol}://${req.get('host')}/dashboard?payment=success&type=subscription`);
       console.log(`   Cancel: ${req.protocol}://${req.get('host')}/dashboard?payment=cancelled`);
       res.json({
-        checkoutUrl: session.url,
-        sessionId: session.id
+        checkoutUrl: session?.url,
+        sessionId: session?.id
       });
     } catch (error: any) {
       console.error("❌ Error creating subscription:", error);
@@ -1035,7 +1093,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let event;
 
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
+      event = stripe?.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || '');
     } catch (err: any) {
       console.log(`❌ Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);

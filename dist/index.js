@@ -624,15 +624,19 @@ import fs2 from "fs";
 import path2 from "path";
 import { createHash as createHash2 } from "crypto";
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY environment variable is required");
+  if (process.env.NODE_ENV === "production") {
+    console.warn("\u26A0\uFE0F OPENAI_API_KEY non d\xE9finie - Les fonctionnalit\xE9s IA seront d\xE9sactiv\xE9es");
+  } else {
+    throw new Error("OPENAI_API_KEY environment variable is required");
+  }
 }
-var openai = new OpenAI({
+var openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   timeout: 6e4,
   // 60 seconds timeout for robust processing
   maxRetries: 3
   // Auto-retry on failure
-});
+}) : null;
 var AudioProcessor = class {
   static SUPPORTED_FORMATS = [
     ".mp3",
@@ -724,6 +728,9 @@ var TextProcessor = class {
   }
 };
 async function analyzeConversation(conversationText) {
+  if (!openai) {
+    throw new Error("OpenAI API non configur\xE9e - Impossible d'analyser la conversation");
+  }
   const startTime = Date.now();
   try {
     const { cleanedText, metadata } = TextProcessor.preprocessConversation(conversationText);
@@ -854,7 +861,7 @@ Structure JSON EXACTE obligatoire :
     
     \u26A1 MISSION: Produire l'analyse commerciale la plus pr\xE9cise et actionable possible.
     R\xC9PONSE: JSON valide UNIQUEMENT, structure EXACTE requise, Z\xC9RO texte externe.`;
-    const response = await openai.chat.completions.create({
+    const response = await openai?.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -878,7 +885,7 @@ Structure JSON EXACTE obligatoire :
       presence_penalty: 0.1
       // Encourage diverse insights
     });
-    const rawContent = response.choices[0].message.content;
+    const rawContent = response?.choices[0].message.content;
     if (!rawContent) {
       throw new Error("R\xE9ponse vide de l'IA");
     }
@@ -953,6 +960,9 @@ Structure JSON EXACTE obligatoire :
   }
 }
 async function transcribeAudio(audioFilePath) {
+  if (!openai) {
+    throw new Error("OpenAI API non configur\xE9e - Impossible de transcrire l'audio");
+  }
   const startTime = Date.now();
   try {
     const validation = AdvancedAudioProcessor.validateAudioFile(audioFilePath);
@@ -1035,7 +1045,7 @@ async function transcribeAudio(audioFilePath) {
 }
 async function performTranscription(filePath, options) {
   const audioReadStream = fs2.createReadStream(filePath);
-  return await openai.audio.transcriptions.create({
+  return await openai?.audio.transcriptions.create({
     file: audioReadStream,
     model: "whisper-1",
     ...options
@@ -1098,6 +1108,9 @@ function assessAudioQuality(transcription, fileSize) {
   return Math.min(1, quality);
 }
 async function analyzeAudioConversation(transcriptionText, audioMetadata) {
+  if (!openai) {
+    throw new Error("OpenAI API non configur\xE9e - Impossible d'analyser l'audio");
+  }
   try {
     const enhancedPrompt = `Tu es le meilleur expert mondial en psychologie commerciale, analyse comportementale et strat\xE9gie de vente. Tu combines l'expertise de Grant Cardone, Jordan Belfort, et Daniel Kahneman.
 
@@ -1194,7 +1207,7 @@ Structure JSON EXACTE obligatoire (inclut audioInsights) :
     "audioQualityNotes": ["note1 sur la qualit\xE9 audio", "note2"]
   }
 }`;
-    const response = await openai.chat.completions.create({
+    const response = await openai?.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -1211,7 +1224,7 @@ Structure JSON EXACTE obligatoire (inclut audioInsights) :
       max_tokens: 4500
       // Increased for audio insights
     });
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(response?.choices[0].message.content || "{}");
     const requiredFields = [
       "interestLevel",
       "interestJustification",
@@ -1796,9 +1809,13 @@ process.on("SIGTERM", () => {
 // server/routes.ts
 import fs4 from "fs";
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
+  if (process.env.NODE_ENV === "production") {
+    console.warn("\u26A0\uFE0F STRIPE_SECRET_KEY non d\xE9finie - Les fonctionnalit\xE9s de paiement seront d\xE9sactiv\xE9es");
+  } else {
+    throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
+  }
 }
-var stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+var stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 var asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
@@ -1813,6 +1830,28 @@ var validateRequired = (fields) => (req, res, next) => {
 };
 async function registerRoutes(app2) {
   app2.use(getSession());
+  app2.get("/health", (req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development"
+    });
+  });
+  app2.get("/api/health", (req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      message: "API is running"
+    });
+  });
+  app2.get("/", (req, res) => {
+    res.json({
+      message: "LeadMirror API is running",
+      status: "ok",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  });
   const isAuthenticated = (req, res, next) => {
     if (req.session && req.session.userId) {
       return next();
@@ -2468,6 +2507,55 @@ async function registerRoutes(app2) {
         return res.status(400).json({ message: "Vous avez d\xE9j\xE0 un acc\xE8s premium" });
       }
       console.log(`\u{1F4B3} Cr\xE9ation session de paiement \xE0 vie pour l'utilisateur: ${userId}`);
+      const session2 = await stripe?.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              product_data: {
+                name: "LeadMirror - Acc\xE8s \xE0 Vie",
+                description: "Acc\xE8s illimit\xE9 \xE0 vie \xE0 toutes les fonctionnalit\xE9s premium de LeadMirror",
+                images: ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400"]
+              },
+              unit_amount: 9900
+              // 99€ en centimes
+            },
+            quantity: 1
+          }
+        ],
+        mode: "payment",
+        success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success&type=lifetime`,
+        cancel_url: `${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`,
+        client_reference_id: userId,
+        customer_email: user.email || void 0,
+        metadata: {
+          userId,
+          offer_type: "lifetime",
+          type: "lifetime",
+          payment_type: "lifetime"
+        }
+      });
+      console.log(`\u2705 Session de paiement cr\xE9\xE9e: ${session2?.id}`);
+      console.log(`\u{1F517} URLs de retour:`);
+      console.log(`   Success: ${req.protocol}://${req.get("host")}/dashboard?payment=success&type=lifetime`);
+      console.log(`   Cancel: ${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`);
+      res.json({ checkoutUrl: session2?.url });
+    } catch (error) {
+      console.error("\u274C Erreur cr\xE9ation paiement:", error);
+      res.status(500).json({ message: "Erreur lors de la cr\xE9ation du paiement: " + error.message });
+    }
+  });
+  app2.post("/api/stripe/create-lifetime-session", isAuthenticated, asyncHandler(async (req, res) => {
+    if (!stripe) {
+      return res.status(503).json({ message: "Paiements non configur\xE9s" });
+    }
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouv\xE9" });
+      }
       const session2 = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -2497,16 +2585,16 @@ async function registerRoutes(app2) {
           payment_type: "lifetime"
         }
       });
-      console.log(`\u2705 Session de paiement cr\xE9\xE9e: ${session2.id}`);
+      console.log(`\u2705 Session de paiement cr\xE9\xE9e: ${session2?.id}`);
       console.log(`\u{1F517} URLs de retour:`);
       console.log(`   Success: ${req.protocol}://${req.get("host")}/dashboard?payment=success&type=lifetime`);
       console.log(`   Cancel: ${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`);
-      res.json({ checkoutUrl: session2.url });
+      res.json({ checkoutUrl: session2?.url });
     } catch (error) {
       console.error("\u274C Erreur cr\xE9ation paiement:", error);
       res.status(500).json({ message: "Erreur lors de la cr\xE9ation du paiement: " + error.message });
     }
-  });
+  }));
   app2.post("/api/create-subscription", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
@@ -2525,15 +2613,15 @@ async function registerRoutes(app2) {
       console.log(`\u{1F4B3} Cr\xE9ation session d'abonnement pour l'utilisateur: ${userId}`);
       let customerId = user.stripeCustomerId;
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await stripe?.customers.create({
           email: user.email,
           name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
           metadata: { userId }
         });
-        customerId = customer.id;
+        customerId = customer?.id;
         console.log(`\u{1F464} Client Stripe cr\xE9\xE9: ${customerId}`);
       }
-      const price = await stripe.prices.create({
+      const price = await stripe?.prices.create({
         unit_amount: 1500,
         // €15.00 in cents
         currency: "eur",
@@ -2542,12 +2630,12 @@ async function registerRoutes(app2) {
           name: "LeadMirror Premium"
         }
       });
-      console.log(`\u{1F4B0} Prix cr\xE9\xE9: ${price.id}`);
-      const session2 = await stripe.checkout.sessions.create({
+      console.log(`\uFFFD\uFFFD Prix cr\xE9\xE9: ${price?.id}`);
+      const session2 = await stripe?.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ["card"],
         line_items: [{
-          price: price.id,
+          price: price?.id,
           quantity: 1
         }],
         mode: "subscription",
@@ -2560,13 +2648,13 @@ async function registerRoutes(app2) {
           offer_type: "subscription"
         }
       });
-      console.log(`\u2705 Session d'abonnement cr\xE9\xE9e: ${session2.id}`);
+      console.log(`\u2705 Session d'abonnement cr\xE9\xE9e: ${session2?.id}`);
       console.log(`\u{1F517} URLs de retour:`);
       console.log(`   Success: ${req.protocol}://${req.get("host")}/dashboard?payment=success&type=subscription`);
       console.log(`   Cancel: ${req.protocol}://${req.get("host")}/dashboard?payment=cancelled`);
       res.json({
-        checkoutUrl: session2.url,
-        sessionId: session2.id
+        checkoutUrl: session2?.url,
+        sessionId: session2?.id
       });
     } catch (error) {
       console.error("\u274C Error creating subscription:", error);
@@ -2577,7 +2665,7 @@ async function registerRoutes(app2) {
     const sig = req.headers["stripe-signature"];
     let event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || "");
+      event = stripe?.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET || "");
     } catch (err) {
       console.log(`\u274C Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
