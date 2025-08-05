@@ -47,6 +47,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // API health check route for Railway
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      message: 'API is running'
+    });
+  });
+
   // Root route for Railway healthcheck
   app.get('/', (req, res) => {
     res.json({ 
