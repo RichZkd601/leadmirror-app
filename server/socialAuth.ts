@@ -9,21 +9,27 @@ export function getSession() {
   const defaultSessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const extendedSessionTtl = 30 * 24 * 60 * 60 * 1000; // 30 days
   
-  // Try to use PostgreSQL store, fallback to memory store if DB is not available
+  // Use memory store in development, PostgreSQL in production
   let sessionStore;
-  try {
-    const pgStore = connectPg(session);
-    sessionStore = new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: false,
-      ttl: extendedSessionTtl, // Use extended TTL for store
-      tableName: "sessions",
-    });
-  } catch (error) {
-    console.log('⚠️ PostgreSQL session store not available, using memory store');
-    console.log('Database error:', error);
-    // Fallback to memory store
-    sessionStore = undefined;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔄 Mode développement - utilisation du store de session en mémoire');
+    sessionStore = undefined; // Use memory store
+  } else {
+    // Try to use PostgreSQL store, fallback to memory store if DB is not available
+    try {
+      const pgStore = connectPg(session);
+      sessionStore = new pgStore({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: false,
+        ttl: extendedSessionTtl, // Use extended TTL for store
+        tableName: "sessions",
+      });
+    } catch (error) {
+      console.log('⚠️ PostgreSQL session store not available, using memory store');
+      console.log('Database error:', error);
+      // Fallback to memory store
+      sessionStore = undefined;
+    }
   }
   
   return session({

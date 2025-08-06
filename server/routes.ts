@@ -59,13 +59,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'LeadMirror API is running',
-      status: 'ok',
-      timestamp: new Date().toISOString()
-    });
+  // Simple auth user endpoint for development
+  app.get('/api/auth/user', (req, res) => {
+    // En mode développement, retourner null pour permettre l'accès sans auth
+    res.status(401).json({ message: 'Not authenticated' });
   });
+
+  // Route removed to allow frontend to be served by Vite
 
   // Simple auth system with email/password - AFTER HEALTH CHECK ROUTES
   app.use(getSession());

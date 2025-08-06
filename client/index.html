@@ -4,6 +4,93 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     
+    <!-- CSS Reset to prevent Google default styles conflicts -->
+    <style>
+      /* Aggressive reset to override all Google styles */
+      * {
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      html {
+        font-size: 16px !important;
+        -webkit-text-size-adjust: 100% !important;
+        line-height: 1.5 !important;
+      }
+      
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        line-height: 1.5 !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        background: transparent !important;
+        color: inherit !important;
+        word-wrap: normal !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+        display: block !important;
+      }
+      
+      /* Completely override all Google CSS variables */
+      :root {
+        --background-color: transparent !important;
+        --error-code-color: inherit !important;
+        --google-blue-50: transparent !important;
+        --google-blue-100: transparent !important;
+        --google-blue-300: transparent !important;
+        --google-blue-600: transparent !important;
+        --google-blue-700: transparent !important;
+        --google-gray-100: transparent !important;
+        --google-gray-300: transparent !important;
+        --google-gray-500: transparent !important;
+        --google-gray-50: transparent !important;
+        --google-gray-600: transparent !important;
+        --google-gray-700: inherit !important;
+        --google-gray-800: inherit !important;
+        --google-gray-900: inherit !important;
+        --heading-color: inherit !important;
+        --link-color: inherit !important;
+        --primary-button-fill-color-active: transparent !important;
+        --primary-button-fill-color: transparent !important;
+        --primary-button-text-color: inherit !important;
+        --quiet-background-color: transparent !important;
+        --secondary-button-border-color: transparent !important;
+        --secondary-button-fill-color: transparent !important;
+        --secondary-button-hover-border-color: transparent !important;
+        --secondary-button-hover-fill-color: transparent !important;
+        --secondary-button-text-color: inherit !important;
+        --small-link-color: inherit !important;
+        --text-color: inherit !important;
+      }
+      
+      /* Override any Google styles that might be applied */
+      body[style] {
+        background: transparent !important;
+        color: inherit !important;
+        word-wrap: normal !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 16px !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+      }
+      
+      /* Override media queries */
+      @media (max-width: 420px) and (orientation: portrait), (max-height: 560px) {
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      }
+      
+      /* Override element styles */
+      element {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+        font-size: 16px !important;
+      }
+    </style>
+    
     <!-- SEO Meta Tags -->
     <title>LeadMirror - Analyse IA de Conversations Commerciales | SaaS Révolutionnaire</title>
     <meta name="description" content="LeadMirror révolutionne l'analyse de conversations commerciales avec une IA de pointe. Analysez vos prospects, générez des messages optimisés et multipliez vos conversions. Essai gratuit !" />
@@ -65,9 +152,8 @@
     
     <!-- Additional SEO -->
     <meta name="theme-color" content="#0066cc" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="LeadMirror" />
-    <link rel="manifest" href="/site.webmanifest" />
     
     <!-- Performance and SEO -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

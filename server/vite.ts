@@ -5,6 +5,10 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const viteLogger = createLogger();
 
@@ -69,19 +73,51 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "..", "dist", "public");
+  // Essayer plusieurs chemins possibles pour le build
+  const possiblePaths = [
+    path.resolve(__dirname, "..", "dist", "public"),
+    path.resolve(__dirname, "..", "dist"),
+    path.resolve(__dirname, "..", "client", "dist"),
+    path.resolve(__dirname, "..", "build"),
+  ];
 
-  if (!fs.existsSync(distPath)) {
-    console.warn(`Build directory not found: ${distPath}, serving development mode`);
-    // In production, if build doesn't exist, we should probably fail
-    // But for now, let's be more lenient
+  let distPath = null;
+  for (const testPath of possiblePaths) {
+    if (fs.existsSync(testPath)) {
+      distPath = testPath;
+      console.log(`✅ Dossier de build trouvé: ${testPath}`);
+      break;
+    }
+  }
+
+  if (!distPath) {
+    console.warn(`❌ Aucun dossier de build trouvé. Chemins testés:`, possiblePaths);
+    console.warn(`⚠️  Mode développement - serveur API uniquement`);
+    console.warn(`💡 Pour servir le frontend, exécutez: npm run build-prod`);
     return;
   }
 
+  // Servir les fichiers statiques
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // Servir index.html pour toutes les routes non-API (SPA)
+  app.use("*", (req, res) => {
+    // Ne pas servir index.html pour les routes API
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'Endpoint API introuvable' });
+    }
+
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error(`❌ index.html non trouvé dans: ${distPath}`);
+      res.status(404).json({ 
+        message: 'Frontend non trouvé. Exécutez: npm run build-prod',
+        error: 'index.html missing'
+      });
+    }
   });
+
+  console.log(`🚀 Frontend servi depuis: ${distPath}`);
 }
