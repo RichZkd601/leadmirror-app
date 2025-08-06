@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+buildCommand = "./railway-build.sh"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+healthcheckInterval = 30
+numReplicas = 1
+
+[variables]
+NODE_ENV = "production" 

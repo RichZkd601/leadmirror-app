@@ -1,0 +1,644 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadMirror - AI-Powered Sales Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#10B981',
+                        neutral: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            500: '#64748B',
+                            700: '#334155',
+                            900: '#1E293B'
+                        }
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="font-inter bg-neutral-50 text-neutral-900">
+
+    <!-- @COMPONENT: AuthModal -->
+    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-8">
+            <div class="text-center mb-6">
+                <h2 id="authTitle" class="text-2xl font-bold text-neutral-900 mb-2">Welcome to LeadMirror</h2>
+                <p class="text-neutral-500">Analyze your sales conversations with AI</p>
+            </div>
+            
+            <form id="authForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Email</label>
+                    <input type="email" class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="your@email.com" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Password</label>
+                    <input type="password" class="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    <span id="authButtonText">Sign In</span>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-neutral-500">
+                    <span id="authSwitchText">Don't have an account?</span>
+                    <button id="authSwitchBtn" class="text-primary hover:text-blue-700 font-medium ml-1">Sign up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AuthModal -->
+
+    <!-- @COMPONENT: Header -->
+    <header class="bg-white border-b border-neutral-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-mirror text-white text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-bold text-neutral-900">LeadMirror</h1>
+                    </div>
+                </div>
+                
+                <div id="headerAuth" class="flex items-center space-x-4">
+                    <button onclick="showAuthModal()" class="text-neutral-600 hover:text-neutral-900 transition-colors">
+                        Sign In
+                    </button>
+                    <button onclick="showAuthModal('signup')" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Get Started
+                    </button>
+                </div>
+                
+                <div id="headerUser" class="hidden items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-neutral-600">Analyses used: <span data-bind="user.usedAnalyses" class="font-medium">2</span>/3</span>
+                        <button class="bg-accent text-white px-3 py-1 rounded-md text-xs hover:bg-green-600 transition-colors">
+                            Upgrade
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-neutral-300 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-neutral-600 text-sm"></i>
+                        </div>
+                        <span data-bind="user.email" class="text-sm font-medium">john@example.com</span>
+                        <button onclick="signOut()" class="text-neutral-500 hover:text-neutral-700">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- @COMPONENT: MainDashboard -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-neutral-900 mb-2">Analyze Your Sales Conversations</h2>
+            <p class="text-neutral-600">Paste your email or call summary to get AI-powered insights and perfect follow-up messages.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Analysis Input -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-neutral-900 mb-2">Conversation Analysis</h3>
+                        <p class="text-sm text-neutral-500">Paste your email thread, call notes, or conversation summary below</p>
+                    </div>
+                    
+                    <form id="analysisForm" class="space-y-4">
+                        <div>
+                            <textarea 
+                                id="conversationText" 
+                                class="w-full h-48 px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+                                placeholder="Example:
+
+Hi John,
+
+Thanks for the call yesterday. I understand you're interested in our premium coaching program but mentioned you need to discuss with your business partner first. You also asked about the payment plan options.
+
+Looking forward to hearing from you!
+
+Best,
+Sarah"
+                                data-mock="true"
+                            ></textarea>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs text-neutral-500">
+                                <span data-bind="conversationText.length">0</span> characters
+                            </div>
+                            <button 
+                                type="submit" 
+                                class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                data-event="click:analyzeConversation"
+                            >
+                                <i class="fas fa-magic mr-2"></i>
+                                Analyze Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Analysis Results -->
+                <div id="analysisResults" class="hidden mt-8 space-y-6">
+                    <!-- Interest Score -->
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-semibold text-neutral-900">Interest Level</h4>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-orange-400 rounded-full"></div>
+                                <span class="text-lg font-bold text-orange-600" data-mock="true">Warm</span>
+                            </div>
+                        </div>
+                        <p class="text-neutral-600" data-mock="true">
+                            The prospect shows genuine interest but has clear objections to address. They're engaged but need reassurance and specific information to move forward.
+                        </p>
+                    </div>
+
+                    <!-- Objections -->
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                        <h4 class="text-lg font-semibold text-neutral-900 mb-4">Probable Objections</h4>
+                        <div class="space-y-3" data-mock="true">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                                <div>
+                                    <p class="font-medium text-neutral-900">Decision Making Process</p>
+                                    <p class="text-sm text-neutral-600">Needs to consult with business partner - typical buying committee concern</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                                <div>
+                                    <p class="font-medium text-neutral-900">Financial Concerns</p>
+                                    <p class="text-sm text-neutral-600">Asked about payment plans - price sensitivity indicator</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                                <div>
+                                    <p class="font-medium text-neutral-900">Timing</p>
+                                    <p class="text-sm text-neutral-600">May be stalling or genuinely needs time to decide</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Strategic Advice -->
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                        <h4 class="text-lg font-semibold text-neutral-900 mb-4">Strategic Advice</h4>
+                        <div class="prose prose-sm max-w-none text-neutral-600" data-mock="true">
+                            <p class="mb-3">
+                                <strong>Follow-up timing:</strong> Wait 2-3 days, then send a helpful follow-up that addresses their specific concerns.
+                            </p>
+                            <p class="mb-3">
+                                <strong>Key approach:</strong> Provide value upfront by including case study or testimonial relevant to their situation. Address payment options directly.
+                            </p>
+                            <p>
+                                <strong>Next steps:</strong> Offer a brief call to answer partner questions and provide flexible payment terms documentation.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Generated Follow-up -->
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-semibold text-neutral-900">Generated Follow-up</h4>
+                            <button class="text-primary hover:text-blue-700 text-sm font-medium" onclick="copyToClipboard('followupMessage')">
+                                <i class="fas fa-copy mr-1"></i>
+                                Copy Message
+                            </button>
+                        </div>
+                        
+                        <div id="followupMessage" class="bg-neutral-50 rounded-lg p-4" data-mock="true">
+                            <div class="mb-3">
+                                <p class="text-sm font-medium text-neutral-700">Subject:</p>
+                                <p class="text-sm text-neutral-900">Quick follow-up + flexible payment options for your review</p>
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm font-medium text-neutral-700 mb-2">Message:</p>
+                                <div class="text-sm text-neutral-900 leading-relaxed">
+                                    <p class="mb-3">Hi John,</p>
+                                    <p class="mb-3">I hope you're doing well! I wanted to follow up on our conversation and share something that might help with your decision.</p>
+                                    <p class="mb-3">I've attached our flexible payment plan options, including the 3-month plan we discussed. I've also included a case study from a client in a similar situation who saw a 40% revenue increase within 6 months.</p>
+                                    <p class="mb-3">I understand the importance of getting your business partner's input. Would it be helpful if I scheduled a brief 15-minute call with both of you this week to answer any questions they might have?</p>
+                                    <p class="mb-3">No pressure at all - I'm here to support your decision-making process.</p>
+                                    <p>Best regards,<br>Sarah</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="analysisLoading" class="hidden mt-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-8 text-center">
+                        <div class="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p class="text-neutral-600">Analyzing your conversation...</p>
+                        <p class="text-sm text-neutral-500 mt-2">This usually takes 10-15 seconds</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Usage Stats -->
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <h4 class="text-lg font-semibold text-neutral-900 mb-4">Your Usage</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-neutral-600">Monthly Analyses</span>
+                                <span class="font-medium" data-mock="true">2/3</span>
+                            </div>
+                            <div class="w-full bg-neutral-200 rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full" style="width: 67%"></div>
+                            </div>
+                        </div>
+                        <button class="w-full bg-accent text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium">
+                            Upgrade to Premium
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <h4 class="text-lg font-semibold text-neutral-900 mb-4">Quick Tips</h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-lightbulb text-yellow-500 mt-0.5"></i>
+                            <p class="text-neutral-600">Include context about the prospect's business and pain points</p>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-target text-blue-500 mt-0.5"></i>
+                            <p class="text-neutral-600">Copy entire email threads for better analysis</p>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-clock text-green-500 mt-0.5"></i>
+                            <p class="text-neutral-600">Best results with 100-500 word conversations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Analyses -->
+                <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-neutral-900">Recent Analyses</h4>
+                        <button class="text-primary hover:text-blue-700 text-sm font-medium">
+                            View All
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-3" data-mock="true">
+                        <div class="border border-neutral-100 rounded-lg p-3 hover:bg-neutral-50 transition-colors cursor-pointer">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs text-neutral-500">2 hours ago</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Hot</span>
+                            </div>
+                            <p class="text-sm text-neutral-900 font-medium truncate">Follow-up after demo call with TechCorp...</p>
+                            <button class="text-xs text-primary hover:text-blue-700 mt-1">Copy follow-up</button>
+                        </div>
+                        
+                        <div class="border border-neutral-100 rounded-lg p-3 hover:bg-neutral-50 transition-colors cursor-pointer">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs text-neutral-500">Yesterday</span>
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">Warm</span>
+                            </div>
+                            <p class="text-sm text-neutral-900 font-medium truncate">Price objection handling for consulting...</p>
+                            <button class="text-xs text-primary hover:text-blue-700 mt-1">Copy follow-up</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- @END_COMPONENT: MainDashboard -->
+
+    <!-- @COMPONENT: PricingModal -->
+    <div id="pricingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl mx-4 p-8 max-h-screen overflow-y-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-neutral-900 mb-2">Choose Your Plan</h2>
+                <p class="text-neutral-600">Upgrade to unlock unlimited analyses and advanced features</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Free Plan -->
+                <div class="border border-neutral-200 rounded-xl p-6">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-bold text-neutral-900 mb-2">Free</h3>
+                        <div class="text-3xl font-bold text-neutral-900 mb-1">€0</div>
+                        <p class="text-neutral-500">per month</p>
+                    </div>
+                    
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">3 analyses per month</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Basic AI insights</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Follow-up generation</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-times text-neutral-400"></i>
+                            <span class="text-neutral-400">Analysis history</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full border border-neutral-200 text-neutral-700 py-3 rounded-lg hover:bg-neutral-50 transition-colors">
+                        Current Plan
+                    </button>
+                </div>
+                
+                <!-- Premium Plan -->
+                <div class="border-2 border-primary rounded-xl p-6 relative">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-bold text-neutral-900 mb-2">Premium</h3>
+                        <div class="text-3xl font-bold text-primary mb-1">€12</div>
+                        <p class="text-neutral-500">per month</p>
+                    </div>
+                    
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Unlimited analyses</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Advanced AI insights</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Full analysis history</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Performance tracking</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span class="text-neutral-700">Priority support</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-primary text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        Upgrade Now
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                <button onclick="closePricingModal()" class="text-neutral-500 hover:text-neutral-700">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: PricingModal -->
+
+    <!-- @COMPONENT: HistoryModal -->
+    <div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 p-8 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-neutral-900">Analysis History</h2>
+                <button onclick="closeHistoryModal()" class="text-neutral-500 hover:text-neutral-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4" data-mock="true">
+                <!-- History Item 1 -->
+                <div class="border border-neutral-200 rounded-lg p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="text-sm text-neutral-500">March 15, 2024 - 14:32</span>
+                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Hot</span>
+                            </div>
+                            <p class="text-sm text-neutral-700">Demo follow-up with TechCorp - interested in enterprise package</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </button>
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-neutral-600 bg-neutral-50 rounded p-3">
+                        "Hi Sarah, great demo yesterday. The team is impressed with the analytics dashboard..."
+                    </div>
+                </div>
+                
+                <!-- History Item 2 -->
+                <div class="border border-neutral-200 rounded-lg p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="text-sm text-neutral-500">March 14, 2024 - 09:15</span>
+                                <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">Warm</span>
+                            </div>
+                            <p class="text-sm text-neutral-700">Price objection handling for consulting services</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </button>
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-neutral-600 bg-neutral-50 rounded p-3">
+                        "Thanks for the proposal John. The scope looks good but the price point is higher than..."
+                    </div>
+                </div>
+                
+                <!-- History Item 3 -->
+                <div class="border border-neutral-200 rounded-lg p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="text-sm text-neutral-500">March 12, 2024 - 16:45</span>
+                                <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Cold</span>
+                            </div>
+                            <p class="text-sm text-neutral-700">No response after initial outreach - need re-engagement strategy</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </button>
+                            <button class="text-primary hover:text-blue-700 text-sm">
+                                <i class="fas fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-neutral-600 bg-neutral-50 rounded p-3">
+                        "Hi Mike, I sent you some information about our new marketing automation platform..."
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 flex justify-between items-center">
+                <p class="text-sm text-neutral-500">Showing 3 of 15 analyses</p>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 text-sm border border-neutral-200 rounded hover:bg-neutral-50">Previous</button>
+                    <button class="px-3 py-1 text-sm border border-neutral-200 rounded hover:bg-neutral-50">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: HistoryModal -->
+
+    <script>
+        // @STATE: isAuthenticated:boolean = false
+        // @STATE: currentUser:object = null
+        // @STATE: analysisInProgress:boolean = false
+        // @STATE: userAnalyses:array = []
+
+        (function() {
+            let isAuthenticated = false;
+            let analysisInProgress = false;
+            
+            // Authentication functions
+            window.showAuthModal = function(mode = 'signin') {
+                const modal = document.getElementById('authModal');
+                const title = document.getElementById('authTitle');
+                const buttonText = document.getElementById('authButtonText');
+                const switchText = document.getElementById('authSwitchText');
+                const switchBtn = document.getElementById('authSwitchBtn');
+                
+                if (mode === 'signup') {
+                    title.textContent = 'Create Your Account';
+                    buttonText.textContent = 'Sign Up';
+                    switchText.textContent = 'Already have an account?';
+                    switchBtn.textContent = 'Sign in';
+                    switchBtn.onclick = () => showAuthModal('signin');
+                } else {
+                    title.textContent = 'Welcome Back';
+                    buttonText.textContent = 'Sign In';
+                    switchText.textContent = "Don't have an account?";
+                    switchBtn.textContent = 'Sign up';
+                    switchBtn.onclick = () => showAuthModal('signup');
+                }
+                
+                modal.classList.remove('hidden');
+            };
+            
+            window.signOut = function() {
+                isAuthenticated = false;
+                document.getElementById('headerAuth').classList.remove('hidden');
+                document.getElementById('headerUser').classList.add('hidden');
+                // TODO: Implement actual sign out logic
+            };
+            
+            // Analysis functions
+            window.analyzeConversation = function(event) {
+                event.preventDefault();
+                
+                if (analysisInProgress) return;
+                
+                const textarea = document.getElementById('conversationText');
+                const text = textarea.value.trim();
+                
+                if (!text) {
+                    alert('Please enter a conversation to analyze.');
+                    return;
+                }
+                
+                analysisInProgress = true;
+                showAnalysisLoading();
+                
+                // TODO: Implement actual OpenAI API call
+                setTimeout(() => {
+                    hideAnalysisLoading();
+                    showAnalysisResults();
+                    analysisInProgress = false;
+                }, 3000);
+            };
+            
+            function showAnalysisLoading() {
+                document.getElementById('analysisResults').classList.add('hidden');
+                document.getElementById('analysisLoading').classList.remove('hidden');
+            }
+            
+            function hideAnalysisLoading() {
+                document.getElementById('analysisLoading').classList.add('hidden');
+            }
+            
+            function showAnalysisResults() {
+                document.getElementById('analysisResults').classList.remove('hidden');
+            }
+            
+            // Utility functions
+            window.copyToClipboard = function(elementId) {
+                const element = document.getElementById(elementId);
+                const text = element.textContent;
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    // TODO: Show success toast
+                    console.log('Copied to clipboard');
+                });
+            };
+            
+            window.closePricingModal = function() {
+                document.getElementById('pricingModal').classList.add('hidden');
+            };
+            
+            window.closeHistoryModal = function() {
+                document.getElementById('historyModal').classList.add('hidden');
+            };
+            
+            // Event listeners
+            document.getElementById('analysisForm').addEventListener('submit', analyzeConversation);
+            
+            // Close modals on background click
+            document.addEventListener('click', function(event) {
+                if (event.target.classList.contains('fixed')) {
+                    event.target.classList.add('hidden');
+                }
+            });
+            
+            // Simulate authenticated state for demo
+            setTimeout(() => {
+                isAuthenticated = true;
+                document.getElementById('headerAuth').classList.add('hidden');
+                document.getElementById('headerUser').classList.remove('hidden');
+            }, 1000);
+        })();
+    </script>
+</body>
+</html>
