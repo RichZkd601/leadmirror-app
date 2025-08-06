@@ -57,7 +57,7 @@ Ajoutez chaque variable avec sa valeur :
 DATABASE_URL=postgresql://your-database-url
 SESSION_SECRET=your-super-secret-key-here
 NODE_ENV=production
-OPENAI_API_KEY=sk-your-openai-key
+OPENAI_API_KEY=sk-votre-clé-openai-ici
 STRIPE_SECRET_KEY=sk_test_your-stripe-key
 ```
 

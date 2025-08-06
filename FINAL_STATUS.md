@@ -168,7 +168,7 @@ npm run healthcheck
 # Variables d'environnement requises
 DATABASE_URL="postgresql://..."
 SESSION_SECRET="your-secret"
-OPENAI_API_KEY="sk-..."
+OPENAI_API_KEY="sk-votre-clé-openai-ici"
 ```
 
 ### **Pour la Production**

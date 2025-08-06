@@ -75,7 +75,7 @@ DATABASE_URL="postgresql://neondb_owner:npg_Fv2f7siWeHOQ@ep-autumn-heart-abmpmnh
 ### **Clés API (Optionnelles)**
 Pour les fonctionnalités IA complètes, ajoutez dans `.env` :
 ```bash
-OPENAI_API_KEY="sk-your-openai-api-key"
+OPENAI_API_KEY="sk-votre-clé-openai-ici"
 STRIPE_SECRET_KEY="sk_test_your_stripe_secret_key"
 STRIPE_PUBLISHABLE_KEY="pk_test_your_stripe_publishable_key"
 ```

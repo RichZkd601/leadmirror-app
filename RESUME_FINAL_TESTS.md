@@ -43,7 +43,7 @@ SESSION_SECRET="votre-secret-session-très-sécurisé"
 NODE_ENV="production"
 
 # OpenAI
-OPENAI_API_KEY="sk-votre-clé-openai"
+OPENAI_API_KEY="sk-votre-clé-openai-ici"
 
 # Stripe (clés secrètes)
 STRIPE_SECRET_KEY="sk_live_votre-clé-stripe-secrète"

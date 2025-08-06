@@ -24,7 +24,7 @@ SESSION_SECRET="votre-secret-session-très-sécurisé"
 NODE_ENV="production"
 
 # OpenAI
-OPENAI_API_KEY="sk-votre-clé-openai"
+OPENAI_API_KEY="sk-votre-clé-openai-ici"
 
 # Stripe
 STRIPE_SECRET_KEY="sk_live_votre-clé-stripe-secrète"
@@ -100,7 +100,7 @@ npx drizzle-kit migrate
 railway variables set NODE_ENV=production
 railway variables set DATABASE_URL="postgresql://..."
 railway variables set SESSION_SECRET="votre-secret"
-railway variables set OPENAI_API_KEY="sk-..."
+railway variables set OPENAI_API_KEY="sk-votre-clé-openai-ici"
 railway variables set STRIPE_SECRET_KEY="sk_live_..."
 railway variables set STRIPE_PUBLISHABLE_KEY="pk_live_..."
 railway variables set STRIPE_WEBHOOK_SECRET="whsec_..."
