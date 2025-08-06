@@ -16,7 +16,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
   if (process.env.NODE_ENV === 'production') {
     console.warn('⚠️ STRIPE_SECRET_KEY non définie - Les fonctionnalités de paiement seront désactivées');
   } else {
-    throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+    console.warn('⚠️ STRIPE_SECRET_KEY non définie en développement - Les fonctionnalités de paiement seront désactivées');
+    console.log('💡 Pour activer les fonctionnalités de paiement, ajoutez STRIPE_SECRET_KEY dans votre fichier .env');
   }
 }
 

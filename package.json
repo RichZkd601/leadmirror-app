@@ -12,7 +12,7 @@
     "railway-build": "./railway-build.sh",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "healthcheck": "node scripts/railway-health-check.js",
+    "healthcheck": "node scripts/railway-health-check-robust.js",
     "healthcheck-simple": "node scripts/simple-health-check.js",
     "test-server": "node scripts/test-server.js",
     "diagnose-health": "node scripts/diagnose-health.js",
